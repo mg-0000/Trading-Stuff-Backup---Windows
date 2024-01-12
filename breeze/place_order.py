@@ -1,83 +1,97 @@
 from breeze_import import breeze
 
-# from breeze_connect import BreezeConnect 
+# Date must be in format "13-DEC-2023"
+# Underlying must be "NIFTY", "CNXBAN", "NIFFIN"
+def get_sltp(stoploss_price, strike, expiry, underlying, action, order_type, fresh_order_limit, market_type = "limit"):
+    
+    sltp = stoploss_price
+    limit_calculated = breeze.limit_calculator(strike_price = str(strike),                                    
+        product_type = "optionplus",                 
+        expiry_date  = expiry,
+        underlying = underlying,
+        exchange_code = "NFO",
+        order_flow = action,
+        stop_loss_trigger = str(sltp),
+        option_type = order_type,
+        source_flag = "P",
+        limit_rate = "",
+        order_reference = "",
+        available_quantity = "",
+        market_type = market_type,
+        fresh_order_limit = str(fresh_order_limit))
+    
+    while(float(limit_calculated["Success"]["limit_rate"])<stoploss_price):
+        sltp = sltp+1
+        limit_calculated = breeze.limit_calculator(strike_price = str(strike),                                    
+            product_type = "optionplus",                 
+            expiry_date  = expiry,
+            underlying = underlying,
+            exchange_code = "NFO",
+            order_flow = action,
+            stop_loss_trigger = str(sltp),
+            option_type = order_type,
+            source_flag = "P",
+            limit_rate = "",
+            order_reference = "",
+            available_quantity = "",
+            market_type = market_type,
+            fresh_order_limit = str(fresh_order_limit))
+    
+    if(sltp>fresh_order_limit):
+        sltp = fresh_order_limit - 1
+        print("Change in StopLoss. New sltp = " + str(sltp))
+        limit_calculated = breeze.limit_calculator(strike_price = str(strike),                                    
+            product_type = "optionplus",                 
+            expiry_date  = expiry,
+            underlying = underlying,
+            exchange_code = "NFO",
+            order_flow = action,
+            stop_loss_trigger = str(sltp),
+            option_type = order_type,
+            source_flag = "P",
+            limit_rate = "",
+            order_reference = "",
+            available_quantity = "",
+            market_type = market_type,
+            fresh_order_limit = str(fresh_order_limit))
+        
+    return sltp, limit_calculated["Success"]['limit_rate']
 
-# # Initialize SDK
-# breeze = BreezeConnect(api_key="650G7Z51z645540%&15~b93v5*4M!574")
-
-# # Obtain your session key from https://api.icicidirect.com/apiuser/login?api_key=YOUR_API_KEY
-# # Incase your api-key has special characters(like +,=,!) then encode the api key before using in the url as shown below.
-# #import urllib
-# #print("https://api.icicidirect.com/apiuser/login?api_key="+urllib.parse.quote_plus("your_api_key"))
-
-# # Generate Session
-# breeze.generate_session(api_secret="409755400@8P#xT7009=x6~O58977333", session_token="26676922")
-
-# # Connect to websocket(it will connect to tick-by-tick data server)
-# breeze.ws_connect()
-
-print(breeze.get_funds())
-
-validity_date="2023-11-22T06:00:00.000Z"
-
-while(True):
-    print("Enter 1 for NIFTYBANK and 2 for NIFTY50 ")
-    choice = int(input())
-    if(choice == 1):
-        stock = "CNXBAN"
-        quantity = 15
-        expiry = "2023-11-22T16:00:00.000Z"
-    elif(choice == 2):
-        stock = "NIFTY50"
-        quantity = 50
-        expiry = "2023-11-23T16:00:00.000Z"
-    else:
-        print("Wrong Choice")
-        continue
-
-    print("Enter 1 for Call and 2 for Put ")
-    choice = int(input())
-    if(choice == 1):
-        right = "call"
-    elif(choice == 2):
-        right = "put"
-    else:
-        print("Wrong Choice")
-        continue
-
-    print("Enter 1 for buy and 2 for sell ")
-    buy_or_sell = int(input())
-    if(buy_or_sell == 1):
-        action = "buy"
-    elif(buy_or_sell == 2):
-        action = "sell"
-    else:
-        print("Wrong Choice")
-        continue
-
-    print("Enter the strike price ")
-    strike = int(input())
-
-    print("Enter stoploss price ")
-    stoploss = int(input())
-    if(stoploss==''):
-        stoploss = 0
-
-    # place order
-    print("Placing order")
-    print(stock, action, stoploss, quantity, right, strike, expiry)
-    print("2023-11-22T06:00:00.000Z", str(validity_date))
-
+def place_order(stock, strike, action, stoploss, quantity, right, expiry, sltp_expiry, sltp_stock, validity_date, cover_order_id = ''):
+    fresh_order_limit = breeze.get_quotes(stock_code=sltp_stock,
+                    exchange_code="NFO",
+                    expiry_date=expiry,
+                    product_type="options",
+                    right=right,
+                    strike_price=str(strike))
+    fresh_order_limit = fresh_order_limit["Success"][0]["ltp"]
     if(action=="buy"):
-        print(breeze.place_order(stock_code=str(stock),
+        limit_calculated = breeze.limit_calculator(strike_price = str(strike),                                    
+                product_type = "optionplus",                 
+                expiry_date  = sltp_expiry,
+                underlying = sltp_stock,
+                exchange_code = "NFO",
+                order_flow = "sell",
+                stop_loss_trigger = str(stoploss),
+                option_type = right,
+                source_flag = "P",
+                limit_rate = "",
+                order_reference = "",
+                available_quantity = "",
+                market_type = "market",
+                fresh_order_limit = str(fresh_order_limit))
+        
+        limit_calculated = limit_calculated["Success"]["limit_rate"]
+        
+        order = (breeze.place_order(stock_code=str(stock),
                         exchange_code="NFO",
                         product="optionplus",
                         action=str(action),
-                        order_type="limit",
+                        order_type="market",    ##
                         stoploss=str(stoploss),
-                        quantity=str(quantity),
-                        price=str(stoploss),
-                        validity="vtc",
+                        quantity=str(quantity),     # Stoploss trigger price
+                        price=str(limit_calculated),   # Stoploss limit price
+                        validity="day",
                         validity_date=str(validity_date),
                         disclosed_quantity="0",
                         expiry_date=str(expiry),
@@ -86,18 +100,40 @@ while(True):
                         order_type_fresh = "market",
                         order_rate_fresh = "",
                         user_remark="Placing Order"))
+
+        
+        # sltp, limit_calculated = get_sltp(stoploss, strike, sltp_expiry, sltp_stock, "sell", right,fresh_order_limit, "limit")
+
+        # order = (breeze.place_order(stock_code=str(stock),
+        #                 exchange_code="NFO",
+        #                 product="optionplus",
+        #                 action=str(action),
+        #                 order_type="limit",    ##
+        #                 stoploss=str(sltp),
+        #                 quantity=str(quantity),     # Stoploss trigger price
+        #                 price=str(limit_calculated),   # Stoploss limit price
+        #                 validity="day",
+        #                 validity_date=str(validity_date),
+        #                 disclosed_quantity="0",
+        #                 expiry_date=str(expiry),
+        #                 right=str(right),
+        #                 strike_price=str(strike),
+        #                 order_type_fresh = "market",
+        #                 order_rate_fresh = "",
+        #                 user_remark="Placing Order"))
+        print("Stoploss Limit Calculated = " + str(limit_calculated))
+        return order
     elif(action=="sell"):
-        print(breeze.place_order(stock_code=str(stock),
+
+        order = breeze.modify_order(order_id=cover_order_id,
                     exchange_code="NFO",
-                    product="options",
-                    action=str(action),
                     order_type="market",
-                    stoploss="",
+                    stoploss="0",
                     quantity=str(quantity),
-                    price="",
-                    validity="day",
-                    validity_date=str(validity_date),
+                    price="0",
+                    validity="Day",
                     disclosed_quantity="0",
-                    expiry_date=str(expiry),
-                    right=str(right),
-                    strike_price=str(strike)))
+                    validity_date=validity_date)
+        return order
+    else:
+        return "Invalid"

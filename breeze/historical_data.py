@@ -1,4 +1,6 @@
-from breeze_connect import BreezeConnect 
+import sys
+sys.path.insert(1, 'C:/Users/mridu/Documents/Trading Stuff/breeze')
+from breeze_import import breeze
 import datetime
 import pandas as pd
 import numpy as np
@@ -25,32 +27,6 @@ def divide(start, end, interval):
         temp = last_end + datetime.timedelta(seconds=1)
         return_list.append([temp.isoformat()+".000Z", end])
         return return_list
-
-# Initialize SDK
-breeze = BreezeConnect(api_key="650G7Z51z645540%&15~b93v5*4M!574")
-
-# Obtain your session key from https://api.icicidirect.com/apiuser/login?api_key=YOUR_API_KEY
-# Incase your api-key has special characters(like +,=,!) then encode the api key before using in the url as shown below.
-#import urllib
-#print("https://api.icicidirect.com/apiuser/login?api_key="+urllib.parse.quote_plus("your_api_key"))
-
-# Generate Session
-breeze.generate_session(api_secret="8505G11&242r661%P4$035n8191s25V4", session_token="23728819")
-
-# Connect to websocket(it will connect to tick-by-tick data server)
-#breeze.ws_connect()
-
-# Callback to receive ticks.
-#def on_ticks(ticks):
-#    print("Ticks: {}".format(ticks))
-
-# Assign the callbacks.
-#breeze.on_ticks = on_ticks
-
-# subscribe stocks feeds
-#breeze.subscribe_feeds(exchange_code="NFO", stock_code="ZEEENT", product_type="options", expiry_date="31-Mar-2022", strike_price="350", right="Call", get_exchange_quotes=True, get_market_depth=False)
-
-# initializing input variables like expiry date and strike price
 
 def get_option_historical_data(start_date, end_date, expiry, strike, stock_code='NIFTY', time_interval="1minute", right = "call"):
 
@@ -197,12 +173,16 @@ def get_equity_historical_data(start_date, end_date, stock_code, time_interval =
 
     return(put_data)
 
-#for date in [11,12,15,16,17,18,19,22,23,24]:
-#    for strike in range(45100, 46100, 100):
-#        get_option_historical_data(start_date = "2023-05-" + str(date) + "T07:00:00.000Z", end_date = "2023-05-" + str(date) + "T18:00:00.000Z", expiry = "2023-05-25T07:00:00.000Z", strike = strike, stock_code="CNXBAN", time_interval="1minute")
+date = "2023-12-04"
+expiry = "2023-12-06"
+strike = 45700
+right = "call"
 
-# date = "2023-02-22"
-# expiry = "2023-04-15"
-#get_option_historical_data(start_date = "2023-09-21T07:00:00.000Z", end_date = "2023-09-22T18:00:00.000Z", expiry = "2023-09-27T07:00:00.000Z", strike = 44800, stock_code="CNXBAN", time_interval="1minute")
-#get_equity_historical_data(start_date = "2023-09-21T07:00:00.000Z", end_date = "2023-09-22T18:00:00.000Z", stock_code="CNXBAN", time_interval="1minute")
-#get_option_historical_data(start_date = (date) + "T07:00:00.000Z", end_date = (date) + "T18:00:00.000Z", expiry = expiry + "T07:00:00.000Z", strike = 41000, stock_code="CNXBAN", time_interval="1minute", right="call")
+# tmp = get_option_historical_data(start_date = (date) + "T09:15:00.000Z", end_date = (date) + "T15:30:00.000Z", expiry = expiry + "T09:15:00.000Z", strike = strike, stock_code="CNXBAN", time_interval="1second", right=right)
+data = get_equity_historical_data(start_date=(date) + "T09:15:00.000Z", end_date=(date) + "T15:30:00.000Z", stock_code="CNXBAN", time_interval="1minute")
+print(data)
+print(data.iloc[data.index[data['datetime']=="2023-12-04 09:14:00"][0]: data.index[data['datetime']=="2023-12-04 09:30:00"][0]]['close'])
+
+open_close = float(data[data['datetime']==date+" 09:00:00"]['open'].values) - float(data[data['datetime']==date+" 09:15:00"]['open'].values)
+print(open_close)
+# print(tmp)
