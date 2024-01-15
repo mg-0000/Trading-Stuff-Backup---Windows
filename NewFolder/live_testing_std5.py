@@ -226,13 +226,13 @@ def get_spot_price(stock, date):
   # print(path)
   next_date = (datetime.strptime(date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
   if(os.path.isfile(path)==False):
-      historical_data.get_equity_historical_data(start_date = str(date) + "T09:30:00.000Z", end_date = str(next_date) + "T15:30:00.000Z", stock_code=stock, time_interval="30minute")
+      historical_data.get_equity_historical_data(start_date = str(date) + "T09:30:00.000Z", end_date = str(date) + "T15:30:00.000Z", stock_code=stock, time_interval="30minute")
       if(os.path.isfile(path)==False):
           print("No data for date", date)
           return 0
   df = pd.read_csv(path)
-  spot = float(df.iloc[:]['open'].mean())
-  # spot = float(df.iloc[0]['open'])
+  # spot = float(df.iloc[:]['open'].mean())
+  spot = float(df.iloc[0]['open'])
 
   # spot =  44800
 
@@ -246,9 +246,9 @@ def get_spot_price(stock, date):
 
 return_list = []
 
-start_dates = '2023-10-26'
-end_dates = '2023-12-20'
-first_expiry = '2023-11-01'
+start_dates = '2024-01-09'
+end_dates = '2024-01-15'
+first_expiry = '2024-01-10'
 
 weekday_dates = get_weekday_dates(start_dates, end_dates)
 expiry_dates = get_expiry_dates(weekday_dates, first_expiry)
@@ -300,7 +300,7 @@ for i in range(len(weekday_dates)):
   print("For PUT Expiry:", expiry, "Date:", date, "Orders:", orders, "PnL:", pnl)
 
   # Save return_list to a file output.txt
-  with open('output2.txt', 'w') as f:
+  with open('output.txt', 'w') as f:
     for item in return_list:
       f.write("%s," % item)
 
