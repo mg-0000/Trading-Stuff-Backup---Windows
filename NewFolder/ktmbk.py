@@ -42,12 +42,8 @@ stock = "CNXBAN"
 validity_date = "2024-01-10T16:00:00.000Z"
 
 # Initialisation
+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
 
-temp = np.arange(-30,0,2)
-temp = temp/15    ##  This can be a parameter
-temp = np.flip(temp)
-temp = np.exp(temp)
-weights = temp
 # print(weights)
 
 total_orders = 0
