@@ -25,6 +25,7 @@ import threading
 import math
 import time as tp
 from decimal import Decimal
+import os
 
 from breeze_import import api_key, api_secret, session_token, breeze
 from get_session_key import get_key
@@ -296,7 +297,8 @@ def on_ticks(ticks):
     if(int(now.second)!=0 and int(now.second)!=1 and int(now.second)!=59 and int(now.second)!=58 and int(ticks['ltt'][-7:-5]) - int(now.second) <= -3):
         stop_websocket()
         tp.sleep(1)
-        start_websocket()
+        os.system("python3 " + os.path.basename(__file__))
+        # start_websocket()
         # return
     
     if(time<=15):

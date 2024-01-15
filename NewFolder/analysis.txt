@@ -1,0 +1,15 @@
+ANALYSIS METRICS:
+
+Of the Strategy
+1. Store entire lists
+    - Pnl in each trade
+    - My Orders list (include buy and sell times in time format)
+    - Profitable Orders list 
+    - Lossy Orders list 
+2. Mean and Median of the following
+    - Total Orders
+    - Total P&L
+    - Percentage profitable/lossy
+    - Max Drawdown and variance of profit 
+    - Hold times for profitable and lossy trades separately
+    - Graph of times of trades, both profitable and lossy

@@ -21,7 +21,74 @@ def get_weekday_dates(start_date, end_date, interval = 1):
         # Check if the current date is a weekday (0 = Monday, 6 = Sunday)
         
         if current_date.weekday() < 5:  # Monday to Friday
+            # Holiday on 26th January
+            if(current_date==datetime.strptime("2023-01-26", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 07th March
+            if(current_date==datetime.strptime("2023-03-07", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 30th March
+            if(current_date==datetime.strptime("2023-03-30", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 4th April
+            if(current_date==datetime.strptime("2023-04-04", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 7th April
+            if(current_date==datetime.strptime("2023-04-07", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 14th April
+            if(current_date==datetime.strptime("2023-04-14", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 1st May
+            if(current_date==datetime.strptime("2023-05-01", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 29th June
+            if(current_date==datetime.strptime("2023-06-29", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 29th July
+            if(current_date==datetime.strptime("2023-07-29", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 15th August
+            if(current_date==datetime.strptime("2023-08-15", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 19th September
+            if(current_date==datetime.strptime("2023-09-19", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 02nd October
+            if(current_date==datetime.strptime("2023-10-02", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 24th October
+            if(current_date==datetime.strptime("2023-10-24", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 14st November
+            if(current_date==datetime.strptime("2023-11-14", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 27th November
+            if(current_date==datetime.strptime("2023-11-27", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Holiday on 25th December
+            if(current_date==datetime.strptime("2023-12-25", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            
             result.append(current_date.strftime("%Y-%m-%d"))
+        
+
 
         # Move to the next day
         current_date += one_day
@@ -57,6 +124,12 @@ def get_expiry_dates(dates, first_expiry):
         if(first_expiry==datetime.strptime("2023-01-26", "%Y-%m-%d")):
             first_expiry -= timedelta(days=1)
         if(first_expiry==datetime.strptime("2023-02-01", "%Y-%m-%d")):
+            first_expiry += timedelta(days=1)
+
+        # to correct the expiry holiday on 29th November
+        if(first_expiry==datetime.strptime("2023-11-29", "%Y-%m-%d")):
+            first_expiry -= timedelta(days=1)
+        if(first_expiry==datetime.strptime("2023-12-07", "%Y-%m-%d")):
             first_expiry += timedelta(days=1)
 
         # to account for the change in first_expiry, if any
