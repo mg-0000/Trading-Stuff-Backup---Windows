@@ -33,7 +33,7 @@ from breeze_import import breeze_2 as breeze
 from get_session_key import get_key
 from get_stock_token import get_token
 
-todays_date_format1 = "10-Jan-2024"
+todays_date_format1 = "16-Jan-2024"
 strike = 48100
 right_format1 = "CE"  #"PE" for put
 right_format2 = "call"

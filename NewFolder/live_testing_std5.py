@@ -107,7 +107,6 @@ def get_metrics(file):
       history[i] = history[i + 1]
     history[-1] = current_price
     return history
-
   
   def on_ticks(ticks):
     global time
@@ -188,37 +187,6 @@ def get_metrics(file):
 
 # ---- All Files ---- #
 import os
-
-# def get_file_names(folder_path):
-#     file_names = []
-#     for file_name in os.listdir(folder_path):
-#         if os.path.isfile(os.path.join(folder_path, file_name)):
-#             file_names.append(file_name)
-#     return file_names
-
-# folder_path = "./Data"
-# file_names = get_file_names(folder_path)
-
-# order_list = []
-# pnl_list = []
-
-# for file in file_names:
-#   if 'put' in file:
-#     print("File index:", file_names.index(file))
-#     orders, pnl = get_metrics('./Data/'+file)
-#     order_list.append(orders)
-#     pnl_list.append(pnl)
-#     # print('got orders and pnl:', orders, pnl)
-#   else:
-#     continue
-
-# print(order_list)
-# print(pnl_list)
-
-# print(np.mean(np.array(order_list)))
-# print(np.mean(np.array(pnl_list)))
-
-
 
 ## New strike price
 def get_spot_price(stock, date):
