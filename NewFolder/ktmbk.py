@@ -60,6 +60,7 @@ c_std = 4
 
 ##########################
 
+
 websocket_session_key = get_key(session_token, api_key)
 
 ### GET FUNDS FOR CHECK ###
@@ -82,11 +83,11 @@ auth = {"user": user_id, "token": temp_session_token}
 sio = socketio.Client()
 
 ### ALTERNATIVE WEBSOCKET ###
-sio.connect("https://breezeapi.icicidirect.com/", socketio_path='ohlcvstream', headers={"User-Agent":"python-socketio[client]/socket"}, 
-                auth=auth, transports="websocket", wait_timeout=3)
-script_code = ["4.1!" + str(get_token("17-Jan-2024", 48100, "PE")) ] #Subscribe more than one stock at a time
-#Channel name i.e 1SEC,1MIN,5MIN,30MIN
-channel_name = "1SEC"
+# sio.connect("https://breezeapi.icicidirect.com/", socketio_path='ohlcvstream', headers={"User-Agent":"python-socketio[client]/socket"}, 
+#                 auth=auth, transports="websocket", wait_timeout=3)
+# script_code = ["4.1!" + str(get_token("17-Jan-2024", 48100, "PE")) ] #Subscribe more than one stock at a time
+# #Channel name i.e 1SEC,1MIN,5MIN,30MIN
+# channel_name = "1SEC"
 #############################
 
 ### NORMAL WEBSOCKET ###
@@ -342,9 +343,16 @@ def on_ticks(ticks):
         output_file.write("Stopping websocket \n")
         stop_websocket()
         return
+    
+
+    ### FOR LAST OPTION ###
+    # curr_price = float(ticks['close'])
+    # ltt_time = ticks['ltt']
+    #######################
 
     ### FOR ALTERNATIVE WEBSOCKET ###
-    curr_price = float(ticks[8])
+    # curr_price = float(ticks[8])
+    # ltt_time = ticks[-2:]
     #################################
 
     ### FOR NORMAL WEBSOCKET ###
@@ -353,17 +361,18 @@ def on_ticks(ticks):
        print("No go!", ticks)
        return
     curr_price = float(ticks['last'])
+    ltt_time = ticks['ltt'][-7:-5]
     ############################
 
     sltp_price = round_nearest(stoploss_margin*curr_price)
     limit_rate_calculated = get_limit_rate(sltp = sltp_price) 
     time += 1
     # print("Current Price :", str(curr_price), "and the limit rate is", limit_rate_calculated, "and the sltp is", sltp_price)
-    print("Price: ", curr_price, int(ticks['ltt'][-7:-5]) - int(now.second))
+    print("Price: ", curr_price, int(ltt_time) - int(now.second))
     output_file.write("Price: "+ str(curr_price)+'\n')
 
     # If too much delay in live data
-    if(int(now.second)!=0 and int(now.second)!=1 and int(now.second)!=59 and int(now.second)!=58 and int(ticks['ltt'][-7:-5]) - int(now.second) <= -3):
+    if(int(now.second)!=0 and int(now.second)!=1 and int(now.second)!=59 and int(now.second)!=58 and int(ltt_time) - int(now.second) <= -3):
         stop_websocket()
         tp.sleep(1)
         os.system("python3 " + os.path.basename(__file__))
@@ -388,3 +397,9 @@ def on_ticks(ticks):
 
 # start_websocket()
 start_websocket()
+
+### LAST OPTION ###
+# breeze.ws_connect()
+# breeze.on_ticks = on_ticks
+# breeze.subscribe_feeds(exchange_code='NFO', stock_code=stock,interval="1second", product_type="options", expiry_date=sltp_expiry, strike_price=str(strike), right=right_format2, get_exchange_quotes=True, get_market_depth=False)
+###################

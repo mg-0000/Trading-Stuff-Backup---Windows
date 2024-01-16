@@ -41,12 +41,3 @@ print(len(pnl_copy))
       
 plt.plot(pnl_copy)
 plt.show()
-
-
-
-from breeze_import import api_key_2 as api_key
-from breeze_import import api_secret_2 as api_secret
-from breeze_import import session_token_2 as session_token
-from breeze_import import breeze_2 as breeze
-from get_session_key import get_key
-from get_stock_token import get_token
