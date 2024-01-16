@@ -26,13 +26,15 @@ import math
 import time as tp
 from decimal import Decimal
 import os
+import sys
+sys.path.insert(1, '../breeze')
 
 from breeze_import import api_key, api_secret, session_token, breeze
 from get_session_key import get_key
 from get_stock_token import get_token
 
 todays_date_format1 = "11-Jan-2024"
-strike = 47000
+strike = 48100
 right_format1 = "PE"  #"PE" for put
 right_format2 = "put"
 sltp_expiry = "17-Jan-2024"
@@ -66,7 +68,7 @@ stop_threads = False
 max_order_qty = 1
 target_margin = 1.1
 stoploss_margin = 0.9
-c_std = 5
+c_std = 4
 
 ##########################
 
@@ -91,11 +93,12 @@ script_code = "4.1!" + str(get_token(sltp_expiry, int(strike), right_format1))
 # script_code = "4.1!1594" #Subscribe more than one stock at a time
 channel_name = 'stock'
 print("Script Code:", script_code)
-auth = {"user": user_id, "token": temp_session_token} 
+t = auth = {"user": user_id, "token": temp_session_token} 
 sio.connect("https://livestream.icicidirect.com", headers={"User-Agent":"python-socketio[client]/socket"}, 
-                auth=auth, transports="websocket", wait_timeout=3)
+                auth=auth, transports="websocket", wait_timeout=10)
 tux_to_user_value = dict()
 
+print(t)
 print(breeze.get_funds())
 
 def parse_data_simple(data):
@@ -263,29 +266,6 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
 
     decay_factor = (5/100)*math.exp(-(curr_price_time[1] - order[3])/10) # Linearly vary between 0.1% to 1% between 1 sec to 30 sec (in %)
 
-    # if curr_price_time[1] - order[3] < 10 and curr_price_time[0]*(1+5*decay_factor) > old_target and flag == True:
-    # # if curr_price_time[0]*(1+5*decay_factor) > old_target and flag == True:
-    #   decay_factor = (5/100)*math.exp(-(curr_price_time[1] - order[3])/10) # Linearly vary between 0.1% to 1% between 1 sec to 30 sec (in %)
-    #   new_target = (1+decay_factor)*old_target
-    #   new_stoploss = (1-decay_factor)*curr_price_time[0]
-    #   print(f'Updated Order from Old:[TGT:{old_target} and SL:[{old_stoploss}] to'+ \
-    #   f' NEW:[TGT:{new_target} and SL:[{new_stoploss}]')
-    #   # return [order[0],new_target, new_stoploss, curr_price_time[1], flag, order[5], order[6]], pnl, order_qty
-    # elif curr_price_time[1] - order[3] < 10 and curr_price_time[0]*(1+5*decay_factor) < old_target and flag == True:
-    # # elif curr_price_time[0]*(1+5*decay_factor) < old_target and flag == True:
-    #   decay_factor = (5/100)*math.exp(-(curr_price_time[1] - order[3])/10) # Linearly vary between 0.1% to 1% between 1 sec to 30 sec (in %)
-    #   new_target = (1-decay_factor)*old_target
-    #   new_stoploss = (1+decay_factor)*old_stoploss
-    #   if new_stoploss > curr_price_time[0]:
-    #     new_stoploss = (1-decay_factor)*curr_price_time[0]
-    #   print(f'Updated Order from Old:[TGT:{old_target} and SL:[{old_stoploss}] to'+ \
-    #   f' NEW:[TGT:{new_target} and SL:[{new_stoploss}]')
-    #   # return [order[0],new_target, new_stoploss, curr_price_time[1], flag, order[5], order[6]], pnl, order_qty
-    # else:
-    #   new_target = old_target
-    #   new_stoploss = old_stoploss
-    #   print('Order Unchanged')
-
     if curr_price_time[1] - order[3] < 20 and curr_price_time[0]*(1+5*decay_factor) > old_target and flag == True:
       decay_factor = (1/100)*math.exp(-(curr_price_time[1] - order[3])/5) # Linearly vary between 0.1% to 1% between 1 sec to 30 sec (in %)
       new_target = (1+decay_factor)*old_target
@@ -341,6 +321,7 @@ def on_ticks(ticks):
 
     now = datetime.now()
     if(now.hour == 15 and now.minute >= 24):
+        print("Stopping websocket")
         stop_websocket()
         return
 
@@ -371,49 +352,6 @@ def on_ticks(ticks):
 
     # Check for a new buy order
     if curr_price > np.ma.average(np.array(history), weights = weights) + c_std*np.std(np.array(history)) and order_qty < max_order_qty:
-        # Place buy order
-        # fresh_order = (breeze.place_order(stock_code=str(stock),
-        #                 exchange_code="NFO",
-        #                 product="optionplus",
-        #                 action="buy",
-        #                 order_type="market",    ##
-        #                 stoploss=str(sltp_price),
-        #                 quantity=str(15),     # Stoploss trigger price
-        #                 price=str(limit_rate_calculated),   # Stoploss limit price
-        #                 validity="day",
-        #                 validity_date=str(validity_date),
-        #                 disclosed_quantity="0",
-        #                 expiry_date=str(expiry),
-        #                 right=str(right_format2),
-        #                 strike_price=str(strike),
-        #                 order_type_fresh = "market",
-        #                 order_rate_fresh = "",
-        #                 user_remark="Placing Order"))
-        # print('buy call at ',curr_price,'with target ', target_margin*curr_price,'and stoploss',sltp_price,'at time',time)
-        # if(fresh_order["Error"]!='None'):
-        #     strike_price_order = curr_price
-        #     target = target_margin*curr_price
-        #     stoploss = stoploss_margin*curr_price
-        #     try:
-        #         fresh_order_id = fresh_order["Success"]["order_id"]
-        #     except:
-        #         print(fresh_order, limit_rate_calculated)
-        #         return
-        #     detail = breeze.get_order_detail('NFO',fresh_order_id)
-        #     cover_order_id = detail['Success'][0]['parent_order_id']
-        #     my_orders[curr_price] = [strike_price_order, target, stoploss, time, True, fresh_order_id, cover_order_id]
-        #     order_qty += 1
-        #     total_orders += 1
-        #     ###
-        #     # order_copy = my_orders.copy()
-        #     # if(len(my_orders)>0):
-        #     #   for i in my_orders.keys():
-        #     #     if order_copy[i][4]:
-        #     #       order_copy[i][3] = time
-        #     # my_orders = order_copy.copy()
-        #     ###
-        # else:
-        #    print(fresh_order, limit_rate_calculated)
         strike_price_order = curr_price
         target = target_margin*curr_price
         stoploss = stoploss_margin*curr_price
@@ -422,4 +360,9 @@ def on_ticks(ticks):
     # Update history
     history = update_history(history, curr_price)
 
-start_websocket()
+# start_websocket()
+print("Getting live data")
+print(script_code)
+sio.emit('join', script_code)
+sio.on(channel_name, on_ticks)
+print("here")

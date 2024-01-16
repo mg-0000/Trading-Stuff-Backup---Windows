@@ -17,6 +17,7 @@ def get_key(sessiontoken, appkey):
     data = res.read()
     data = data.decode("utf-8")
     data = json.loads(data)
+    print(data)
     key = data["Success"]["session_token"]
     print(key)
     return key

@@ -1,7 +1,7 @@
 import base64 
 import socketio
 from datetime import datetime
-from get_stock_token import get_token
+# from get_stock_token import get_token
 import json
 import hashlib
 import requests
@@ -10,11 +10,22 @@ import time
 print("here1")
 
 #Get User ID and Session Token
-session_key = "QUczNDE0ODQ6ODE2MTM2NjY="
+session_key = "QUczNDE0ODQ6OTMyODQ5Mw=="
 # session_key = "SESSION_TOKEN_FROM_CUSTOMER_DETAILS_API"
 #e.g session_key = "QUYyOTUzMTM6NjY5ODc5NzY="
 secret_key = "409755400@8P#xT7009=x6~O58977333"
 appkey = "650G7Z51z645540%&15~b93v5*4M!574"
+
+from breeze_import import api_key_2 as api_key
+from breeze_import import api_secret_2 as api_secret
+from breeze_import import session_token_2 as session_token
+from breeze_import import breeze_2 as breeze
+from get_session_key import get_key
+from get_stock_token import get_token
+
+appkey = api_key
+secret_key = api_secret
+session_key = get_key(sessiontoken=session_token, appkey=appkey)
 
 now = datetime.now()
 
@@ -36,10 +47,13 @@ print(now, datetime.now())
 user_id, session_token = base64.b64decode(session_key.encode('ascii')).decode('ascii').split(":")
 #e.g Decoded value - AF296713:66987976, after split user_id = AF295313, session_token = 6698797
 
+print(user_id, session_token)
+
 # Python Socket IO Client
 sio = socketio.Client()
 
-script_code = "4.1!" + str(get_token("03-Jan-2024", 48500, "CE")) 
+script_code = "4.1!" + str(get_token("17-Jan-2024", 48100, "PE")) 
+# script_code = "4.1!35513"
 # script_code = "4.1!1594" #Subscribe more than one stock at a time
 channel_name = 'stock'
 
@@ -283,7 +297,7 @@ def on_ticks(ticks):
     print(ticks['ltt'][-7:-5], now)
     time.sleep(2)
     print(now)
-# print("here")
+print("here3")
 sio.emit('join', script_code)
 sio.on(channel_name, on_ticks)
 print("here_last")
