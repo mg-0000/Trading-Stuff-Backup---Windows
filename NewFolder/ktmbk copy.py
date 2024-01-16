@@ -1,17 +1,3 @@
-# Main thread:
-# - Use websocket to get live data 
-# - run the update_target_sl function
-#
-# Thread 1:
-# - Place new orders
-#
-# Thread 2:
-# - Get the limit-rates based on the fixed stoploss using the live data
-
-
-### Yet to do
-# Threadify the on_ticks function
-
 import datetime
 import numpy as np
 import pandas as pd
@@ -36,10 +22,10 @@ from breeze_import import breeze_2 as breeze
 from get_session_key import get_key
 from get_stock_token import get_token
 
-todays_date_format1 = "16-Jan-2024"
+todays_date_format1 = "11-Jan-2024"
 strike = 48100
-right_format1 = "CE"  #"PE" for put
-right_format2 = "call"
+right_format1 = "PE"  #"PE" for put
+right_format2 = "put"
 sltp_expiry = "17-Jan-2024"
 expiry = "2024-01-17T16:00:00.000Z"
 sltp_stock = "CNXBAN"
@@ -47,12 +33,14 @@ stock = "CNXBAN"
 validity_date = "2024-01-10T16:00:00.000Z"
 
 # Initialisation
+output_file = open("live_output.txt", "a")
 
 temp = np.arange(-30,0,2)
 temp = temp/15    ##  This can be a parameter
 temp = np.flip(temp)
 temp = np.exp(temp)
 weights = temp
+# print(weights)
 # print(weights)
 
 total_orders = 0
@@ -71,12 +59,13 @@ stop_threads = False
 max_order_qty = 1
 target_margin = 1.1
 stoploss_margin = 0.9
-c_std = 5
+c_std = 4
 
 ##########################
 
 websocket_session_key = get_key(session_token, api_key)
 
+### GET FUNDS FOR CHECK ###
 payload = json.dumps({})
 time_stamp = datetime.utcnow().isoformat()[:19] + '.000Z'
 checksum = hashlib.sha256((time_stamp+payload+api_secret).encode("utf-8")).hexdigest()
@@ -87,24 +76,36 @@ headers = {
     'X-AppKey': api_key,
     'X-SessionToken': session_token
 }
-
 tmp = requests.get('https://api.icicidirect.com/breezeapi/api/v1/funds', headers=headers, data=payload)
+###########################
+
 
 user_id, temp_session_token = base64.b64decode(websocket_session_key.encode('ascii')).decode('ascii').split(":")
-sio = socketio.Client()
-script_code = "4.1!" + str(get_token(sltp_expiry, int(strike), right_format1)) 
-# script_code = "4.1!1594" #Subscribe more than one stock at a time
-channel_name = 'stock'
-print("Script Code:", script_code)
 auth = {"user": user_id, "token": temp_session_token} 
+sio = socketio.Client()
+
+### ALTERNATIVE WEBSOCKET ###
+sio.connect("https://breezeapi.icicidirect.com/", socketio_path='ohlcvstream', headers={"User-Agent":"python-socketio[client]/socket"}, 
+                auth=auth, transports="websocket", wait_timeout=3)
+script_code = ["4.1!" + str(get_token("17-Jan-2024", 48100, "PE")) ] #Subscribe more than one stock at a time
+#Channel name i.e 1SEC,1MIN,5MIN,30MIN
+channel_name = "1SEC"
+#############################
+
+### NORMAL WEBSOCKET ###
+script_code = "4.1!" + str(get_token(sltp_expiry, int(strike), right_format1)) 
+channel_name = 'stock'
+
 sio.connect("https://livestream.icicidirect.com", headers={"User-Agent":"python-socketio[client]/socket"}, 
                 auth=auth, transports="websocket", wait_timeout=3)
 tux_to_user_value = dict()
+########################
 
+print("Script Code:", script_code)
+print(tmp)
 print(breeze.get_funds())
 
 def parse_data_simple(data):
-    print('hi')
     if data and type(data) == list and len(data) > 0 and type(data[0]) == str and "!" not in data[0]:
         order_dict = {}
         order_dict["messageTime"] = data[8] 
@@ -163,6 +164,8 @@ def update_thread():
   my_orders = order_copy.copy()
 
 def update_target_sl(order, curr_price_time, pnl, order_qty):
+  global output_file
+
   old_target = order[1]
   old_stoploss = order[2]
   flag = order[4]
@@ -195,6 +198,7 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
                     order_type_fresh = "market",
                     order_rate_fresh = "",
                     user_remark="Placing Order"))
+    output_file.write('buy call at '+str(curr_price)+'with target '+str(target_margin*curr_price)+'and stoploss'+str(sltp_price)+'at time'+str(time)+'\n')
     print('buy call at ',curr_price,'with target ', target_margin*curr_price,'and stoploss',sltp_price,'at time',time)
     if(fresh_order["Error"]!='None'):
        try:
@@ -223,7 +227,7 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
                   stoploss="0",
                   quantity=str(15),
                   price="0",
-                  validity="Day",
+                  validity="day",
                   disclosed_quantity="0",
                   validity_date=validity_date)
       except Exception as error:
@@ -231,6 +235,7 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
         print("An exception occurred while selling:", error)
       fresh_order_id = fresh_order["Success"]["order_id"]
       # detail = breeze.get_order_detail('NFO',fresh_order_id)
+      output_file.write(f'Order bought at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]} \n')
       print(f'Order bought at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
       pnl += curr_price_time[0] - order[0]
       flag = False
@@ -256,9 +261,11 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
         print("An exception occurred while selling:", error)
       fresh_order_id = fresh_order["Success"]["order_id"]
       if old_stoploss - order[0] > 0:
+        output_file.write(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]} \n')
         print(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
         # pass
       else:
+        output_file.write(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium lost: {curr_price_time[0] - order[0]} \n')
         print(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium lost: {curr_price_time[0] - order[0]}')
         # pass
 
@@ -273,6 +280,7 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
       decay_factor = (1/100)*math.exp(-(curr_price_time[1] - order[3])/5) # Linearly vary between 0.1% to 1% between 1 sec to 30 sec (in %)
       new_target = (1+decay_factor)*old_target
       new_stoploss = (1-decay_factor)*curr_price_time[0]
+      output_file.write(f'Updated Order from Old:[TGT:{old_target} and SL:[{old_stoploss}] to NEW:[TGT:{new_target} and SL:[{new_stoploss} \n')
       print(f'Updated Order from Old:[TGT:{old_target} and SL:[{old_stoploss}] to'+ \
       f' NEW:[TGT:{new_target} and SL:[{new_stoploss}]')
       # return [order[0],new_target, new_stoploss, curr_price_time[1], flag], pnl, order_qty
@@ -282,12 +290,14 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
       new_stoploss = (1+decay_factor)*old_stoploss
       if new_stoploss > curr_price_time[0]:
         new_stoploss = (1-decay_factor)*curr_price_time[0]
+      output_file.write(f'Updated Order from Old:[TGT:{old_target} and SL:[{old_stoploss}] to NEW:[TGT:{new_target} and SL:[{new_stoploss} \n')
       print(f'Updated Order from Old:[TGT:{old_target} and SL:[{old_stoploss}] to'+ \
       f' NEW:[TGT:{new_target} and SL:[{new_stoploss}]')
       # return [order[0],new_target, new_stoploss, curr_price_time[1], flag], pnl, order_qty
     else:
       new_target = old_target
       new_stoploss = old_stoploss
+      output_file.write('Order Unchanged \n')
       print('Order Unchanged')
 
     return [order[0],new_target, new_stoploss, order[3], flag, order[5], order[6]], pnl, order_qty
@@ -299,10 +309,16 @@ def start_websocket():
 
 def stop_websocket():
   stop_threads = True
+
+  global output_file
+
+  output_file.write("Times up! \n Net pnl = " + str(net_pnl) + "\n Total Orders = " + str(total_orders) + "\n")
+  output_file.close()
+
   print("Time's up!")
   # Print the pnl and orders and stuff
   print("Net pnl:", net_pnl)
-  print("Orders", my_orders)
+  print("Orders", total_orders)
   print("total orders:", total_orders)   
   sio.emit("leave", script_code)
   sio.emit("disconnect", "transport close")
@@ -321,24 +337,33 @@ def on_ticks(ticks):
     global limit_rate_calculated
     global sltp_price
     global limit_rate_calculated
+    global output_file
 
     now = datetime.now()
-    # print('inside')
     if(now.hour == 15 and now.minute >= 24):
-        # print('stopping')
+        print("Stopping websocket")
+        output_file.write("Stopping websocket \n")
         stop_websocket()
         return
 
+    ### FOR ALTERNATIVE WEBSOCKET ###
+    curr_price = float(ticks[8])
+    #################################
+
+    ### FOR NORMAL WEBSOCKET ###
     go_ahead, ticks = parse_data_simple(ticks)
     if(go_ahead==0):
        print("No go!", ticks)
        return
     curr_price = float(ticks['last'])
+    ############################
+
     sltp_price = round_nearest(stoploss_margin*curr_price)
     limit_rate_calculated = get_limit_rate(sltp = sltp_price) 
     time += 1
     # print("Current Price :", str(curr_price), "and the limit rate is", limit_rate_calculated, "and the sltp is", sltp_price)
     print("Price: ", curr_price, int(ticks['ltt'][-7:-5]) - int(now.second))
+    output_file.write("Price: "+ str(curr_price)+'\n')
 
     # If too much delay in live data
     if(int(now.second)!=0 and int(now.second)!=1 and int(now.second)!=59 and int(now.second)!=58 and int(ticks['ltt'][-7:-5]) - int(now.second) <= -3):
@@ -365,7 +390,4 @@ def on_ticks(ticks):
     history = update_history(history, curr_price)
 
 # start_websocket()
-print("Getting live data")
-sio.emit('join', script_code)
-sio.on(channel_name, on_ticks)
-print('pass1')
+start_websocket()
