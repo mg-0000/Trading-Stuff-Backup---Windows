@@ -50,4 +50,3 @@ print("No of days:",len(sum_pnl))
 
 plt.hist(sum_pnl, bins=50)
 plt.show()
-    
