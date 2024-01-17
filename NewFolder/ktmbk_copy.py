@@ -409,6 +409,12 @@ def on_ticks(ticks):
     # Update history
     history = update_history(history, curr_price)
 
+while True:
+   now = datetime.now()
+   if(now.hour >= 9 and now.minute >= 16) and (now.hour <= 15 and now.minute <= 29):
+      break
+   tp.sleep(60)
+   
 # start_websocket()
 start_websocket()
 

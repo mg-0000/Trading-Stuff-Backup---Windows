@@ -126,24 +126,12 @@ class strategy_class:
         target = self.target_margin*curr_price
         stoploss = self.stoploss_margin*curr_price
         self.my_orders[curr_price] = [strike_price_order, target, stoploss, time, True, real_time] # Values {order_price, target, SL, order_time, active_order_flag, real_time}
-        # order_qty += 1
-        # total_orders += 1
-        ###
-        # order_copy = my_orders.copy()
-        # if(len(my_orders)>0):
-        #   for i in my_orders.keys():
-        #     if order_copy[i][4]:
-        #       order_copy[i][3] = time
-        # my_orders = order_copy.copy()
-        ###
 
       order_copy = self.my_orders.copy()
       if len(self.my_orders)>0:
         for i in self.my_orders.keys():
           if order_copy[i][4]:
             order_copy[i], self.net_pnl, self.order_qty = self.update_target_sl(self.my_orders[i],[curr_price,time, real_time], self.net_pnl, self.order_qty)
-            # if order_copy[i][4] == False:
-            #   del self.my_orders[i]
             if len(self.my_orders) == 0:
               break
       self.my_orders = order_copy.copy()

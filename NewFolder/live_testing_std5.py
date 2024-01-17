@@ -42,18 +42,20 @@ def get_metrics(file):
 
     if curr_price_time[1] - order[3] < 10 and flag == True and (curr_price_time[0] <= old_stoploss or curr_price_time[0] >= old_target):
       flag = False
-      return [order[0],old_target, old_stoploss, order[3], flag], pnl, order_qty
+      return [order[0],old_target, old_stoploss, order[3], flag, False], pnl, order_qty
     elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 1.02*order[0] and curr_price_time[0] > 0.98*order[0]):
+    # elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 0.98*order[0]):
       flag = False
-      return [order[0],old_target, old_stoploss, order[3], flag], pnl, order_qty
+      return [order[0],old_target, old_stoploss, order[3], flag, False], pnl, order_qty
     elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] > old_stoploss and curr_price_time[0] < old_target):
       flag = True
       order_qty += 1
       total_orders += 1
       order[0] = curr_price_time[0] 
+      order[5] = True
 
     if flag:
-      if curr_price_time[0] > old_target:
+      if curr_price_time[0] > old_target and order[5]:
         if(curr_price_time[1] - order[3] > 10):
           # print("After time, target hit")
           new_pnl += curr_price_time[0] - order[0]
@@ -61,10 +63,10 @@ def get_metrics(file):
         pnl += curr_price_time[0] - order[0]
         flag = False
         order_qty -= 1
-        return [order[0],old_target, old_stoploss, order[3], flag], pnl, order_qty
+        return [order[0],old_target, old_stoploss, order[3], flag, False], pnl, order_qty
 
 
-      if curr_price_time[0] < old_stoploss:
+      if curr_price_time[0] < old_stoploss and order[5]:
         if(curr_price_time[1] - order[3] > 10):
           new_pnl += curr_price_time[0] - order[0]
           # print("After time, stoploss hit")
@@ -79,7 +81,7 @@ def get_metrics(file):
         pnl += curr_price_time[0] - order[0]
         flag = False
         order_qty -= 1
-        return [order[0],old_target, old_stoploss, order[3], flag], pnl, order_qty
+        return [order[0],old_target, old_stoploss, order[3], flag, False], pnl, order_qty
 
       decay_factor = (5/100)*math.exp(-(curr_price_time[1] - order[3])/20) # Linearly vary between 0.1% to 1% between 1 sec to 30 sec (in %)
 
@@ -100,7 +102,7 @@ def get_metrics(file):
         new_stoploss = old_stoploss
         # print('Order Unchanged')
 
-      return [order[0],new_target, new_stoploss, order[3], flag], pnl, order_qty
+      return [order[0],new_target, new_stoploss, order[3], flag, order[5]], pnl, order_qty
 
   def update_history(history, current_price):
     for i in range(len(history) - 1):
@@ -199,8 +201,8 @@ def get_spot_price(stock, date):
           print("No data for date", date)
           return 0
   df = pd.read_csv(path)
-  spot = float(df.iloc[:]['open'].mean())
-  # spot = float(df.iloc[0]['open'])
+  # spot = float(df.iloc[:]['open'].mean())
+  spot = float(df.iloc[0]['open'])
 
   # spot =  44800
 
