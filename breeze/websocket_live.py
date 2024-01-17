@@ -27,6 +27,8 @@ appkey = api_key
 secret_key = api_secret
 session_key = get_key(sessiontoken=session_token, appkey=appkey)
 
+print("here now")
+
 now = datetime.now()
 
 payload = json.dumps({})
@@ -52,7 +54,7 @@ print(user_id, session_token)
 # Python Socket IO Client
 sio = socketio.Client()
 
-script_code = "4.1!" + str(get_token("17-Jan-2024", 48100, "PE")) 
+script_code = "4.1!" + str(get_token("17-Jan-2024", 46600, "PE")) 
 # script_code = "4.1!35513"
 # script_code = "4.1!1594" #Subscribe more than one stock at a time
 channel_name = 'stock'

@@ -22,15 +22,15 @@ from breeze_import import breeze_2 as breeze
 from get_session_key import get_key
 from get_stock_token import get_token
 
-todays_date_format1 = "11-Jan-2024"
-strike = 48100
-right_format1 = "PE"  #"PE" for put
-right_format2 = "put"
+todays_date_format1 = "17-Jan-2024"
+strike = 46600
+right_format1 = "CE"  #"PE" for put
+right_format2 = "call"
 sltp_expiry = "17-Jan-2024"
 expiry = "2024-01-17T16:00:00.000Z"
 sltp_stock = "CNXBAN"
 stock = "CNXBAN"
-validity_date = "2024-01-10T16:00:00.000Z"
+validity_date = "2024-01-17T16:00:00.000Z"
 
 # Initialisation
 output_file = open("live_output.txt", "a")

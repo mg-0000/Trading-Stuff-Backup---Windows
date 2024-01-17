@@ -18,7 +18,7 @@ sio.connect("https://breezeapi.icicidirect.com/", socketio_path='ohlcvstream', h
                 auth=auth, transports="websocket", wait_timeout=3)
 
 # Script Code of Stock or Instrument  e.g 4.1!1594, 1.1!500209 , 13.1!5023, 6.1!247457. 
-script_code = ["4.1!" + str(get_token("17-Jan-2024", 48100, "PE")) ] #Subscribe more than one stock at a time
+script_code = ["4.1!" + str(get_token("17-Jan-2024", 46600, "PE")) ] #Subscribe more than one stock at a time
 
 #Channel name i.e 1SEC,1MIN,5MIN,30MIN
 channel_name = "1SEC"
@@ -33,8 +33,8 @@ sio.emit('join', script_code)
 sio.on(channel_name, on_ticks)
 
 #Unwatch from the stock
-sio.emit("leave", script_code)
+# sio.emit("leave", script_code)
 
-#Disconnect from the server
-sio.emit("disconnect", "transport close")
+# #Disconnect from the server
+# sio.emit("disconnect", "transport close")
 
