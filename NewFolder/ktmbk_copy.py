@@ -23,7 +23,7 @@ from get_session_key import get_key
 from get_stock_token import get_token
 
 todays_date_format1 = "17-Jan-2024"
-strike = 46600
+strike = 46300
 right_format1 = "CE"  #"PE" for put
 right_format2 = "call"
 sltp_expiry = "17-Jan-2024"
@@ -190,7 +190,7 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
                     stoploss=str(sltp_price),
                     quantity=str(15),     # Stoploss trigger price
                     price=str(limit_rate_calculated),   # Stoploss limit price
-                    validity="ioc",
+                    validity="day",
                     validity_date=str(validity_date),
                     disclosed_quantity="0",
                     expiry_date=str(expiry),
@@ -205,17 +205,17 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
        try:
            fresh_order_id = fresh_order["Success"]["order_id"]
        except:
-           print(fresh_order, limit_rate_calculated)
+           print("Buy Fail",fresh_order, limit_rate_calculated)
            return
        detail = breeze.get_order_detail('NFO',fresh_order_id)
        cover_order_id = detail['Success'][0]['parent_order_id']
        my_orders[curr_price] = [curr_price_time[0], old_target, old_stoploss, time, True, fresh_order_id, cover_order_id]
        order_qty += 1
        total_orders += 1
-    flag = True
-    order_qty += 1
-    total_orders += 1
-    order[0] = curr_price_time[0]
+       flag = True
+       order[0] = curr_price_time[0]
+    else:
+       print("Error while placing buy order:",fresh_order)
 
   if flag:
     if curr_price_time[0] > old_target:
@@ -228,20 +228,30 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
                   stoploss="0",
                   quantity=str(15),
                   price="0",
-                  validity="day",
+                  validity="Day",
                   disclosed_quantity="0",
                   validity_date=validity_date)
       except Exception as error:
         # handle the exception
-        print("An exception occurred while selling:", error)
-      fresh_order_id = fresh_order["Success"]["order_id"]
-      # detail = breeze.get_order_detail('NFO',fresh_order_id)
-      output_file.write(f'Order bought at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]} \n')
-      print(f'Order bought at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
-      pnl += curr_price_time[0] - order[0]
-      flag = False
-      order_qty -= 1
-      return [order[0],old_target, old_stoploss, order[3], flag, order[5], order[6], fresh_order_id], pnl, order_qty
+        print("An exception occurred while selling:", error, order)
+      if(fresh_order['Error'] != 'None'):
+         print("Error while selling:", fresh_order, order)
+         return [order[0],old_target, old_stoploss, order[3], flag, order[5], order[6]], pnl, order_qty
+      else:
+        fresh_order_id = fresh_order["Success"]["order_id"]
+        if old_stoploss - order[0] > 0:
+          output_file.write(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]} \n')
+          print(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
+          # pass
+        else:
+          output_file.write(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium lost: {curr_price_time[0] - order[0]} \n')
+          print(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium lost: {curr_price_time[0] - order[0]}')
+          # pass
+
+        pnl += curr_price_time[0] - order[0]
+        flag = False
+        order_qty -= 1
+        return [order[0],old_target, old_stoploss, order[3], flag, order[5], order[6], fresh_order_id], pnl, order_qty
 
 
     if curr_price_time[0] < old_stoploss:
@@ -259,21 +269,25 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
                   validity_date=validity_date)
       except Exception as error:
         # handle the exception
-        print("An exception occurred while selling:", error)
-      fresh_order_id = fresh_order["Success"]["order_id"]
-      if old_stoploss - order[0] > 0:
-        output_file.write(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]} \n')
-        print(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
-        # pass
+        print("An exception occurred while selling:", error, order)
+      if(fresh_order['Error'] != 'None'):
+         print("Error while selling:", fresh_order, order)
+         return [order[0],old_target, old_stoploss, order[3], flag, order[5], order[6]], pnl, order_qty
       else:
-        output_file.write(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium lost: {curr_price_time[0] - order[0]} \n')
-        print(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium lost: {curr_price_time[0] - order[0]}')
-        # pass
+        fresh_order_id = fresh_order["Success"]["order_id"]
+        if old_stoploss - order[0] > 0:
+          output_file.write(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]} \n')
+          print(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
+          # pass
+        else:
+          output_file.write(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium lost: {curr_price_time[0] - order[0]} \n')
+          print(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium lost: {curr_price_time[0] - order[0]}')
+          # pass
 
-      pnl += curr_price_time[0] - order[0]
-      flag = False
-      order_qty -= 1
-      return [order[0],old_target, old_stoploss, order[3], flag, order[5], order[6], fresh_order_id], pnl, order_qty
+        pnl += curr_price_time[0] - order[0]
+        flag = False
+        order_qty -= 1
+        return [order[0],old_target, old_stoploss, order[3], flag, order[5], order[6], fresh_order_id], pnl, order_qty
 
     decay_factor = (5/100)*math.exp(-(curr_price_time[1] - order[3])/10) # Linearly vary between 0.1% to 1% between 1 sec to 30 sec (in %)
 
@@ -378,7 +392,7 @@ def on_ticks(ticks):
     if(int(now.second)!=0 and int(now.second)!=1 and int(now.second)!=59 and int(now.second)!=58 and int(ltt_time) - int(now.second) <= -3):
         stop_websocket()
         tp.sleep(1)
-        os.system("python3 " + os.path.basename(__file__))
+        os.system("python ktmbk_copy.py" )
     
     if(time<=15):
         history.append(curr_price)
@@ -393,7 +407,7 @@ def on_ticks(ticks):
         strike_price_order = curr_price
         target = target_margin*curr_price
         stoploss = stoploss_margin*curr_price
-        my_orders[curr_price] = [strike_price_order, target, stoploss, time, True, False] # Values {order_price, target, SL, order_time, active_order_flag, buy_trigger_flag}
+        my_orders[curr_price] = [strike_price_order, target, stoploss, time, True, False, 0] # Values {order_price, target, SL, order_time, active_order_flag, buy_trigger_flag}
 
     # Update history
     history = update_history(history, curr_price)

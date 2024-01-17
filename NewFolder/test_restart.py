@@ -9,4 +9,4 @@ for i in a:
     if(i==5):
         print(datetime.now())
         print("restarting")
-        os.system('python3 test_restart.py')
+        os.system('python test_restart.py')
