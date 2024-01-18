@@ -44,6 +44,7 @@ headers = {
 }
 
 tmp = requests.get('https://api.icicidirect.com/breezeapi/api/v1/funds', headers=headers, data=payload)
+print(tmp)
 print(now, datetime.now())
 
 user_id, session_token = base64.b64decode(session_key.encode('ascii')).decode('ascii').split(":")
@@ -54,7 +55,7 @@ print(user_id, session_token)
 # Python Socket IO Client
 sio = socketio.Client()
 
-script_code = "4.1!" + str(get_token("17-Jan-2024", 46600, "PE")) 
+script_code = "4.1!" + str(get_token("25-Jan-2024", 45700, "PE")) 
 # script_code = "4.1!35513"
 # script_code = "4.1!1594" #Subscribe more than one stock at a time
 channel_name = 'stock'

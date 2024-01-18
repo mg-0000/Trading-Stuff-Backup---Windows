@@ -20,7 +20,7 @@ from get_session_key import get_key
 from get_stock_token import get_token
 
 todays_date_format1 = "18-Jan-2024"
-strike = 46300
+strike = 45600
 right_format1 = "PE"  #"PE" for put
 right_format2 = "put"
 sltp_expiry = "25-Jan-2024"
@@ -116,16 +116,12 @@ def parse_data_simple(data):
 
 def round_nearest(n):
   tmp = n*10 - int(n*10)
-  # tmp = int(n*100)
-  # print(tmp,round(n,1))
-  if(tmp < 0.25):
+  if(tmp < 0.5):
     return round(round(n,1),2)
-  elif(tmp < 0.5):
+  elif(tmp==0.5):
     return round(round(n,1) + 0.05,2)
-  elif(tmp < 0.75):
-    return round(round(n,1) - 0.05,2)
   else:
-    return round(n,1) 
+    return round(round(n,1) - 0.05,2)
 
 def get_limit_rate(sltp):
   if(sltp>= 60.05):
@@ -167,6 +163,7 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
   old_target = order[1]
   old_stoploss = order[2]
   flag = order[4]
+  buy_flag = order[5]
 
   global total_orders, curr_price, sltp_price, limit_rate_calculated
   curr_price_time[0] = curr_price
@@ -179,6 +176,8 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
     return [order[0],old_target, old_stoploss, order[3], flag, False, 0, 0], pnl, order_qty
   elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] > old_stoploss and curr_price_time[0] < old_target):
     ### PLACE BUY ORDER ###
+    sltp_price = round_nearest(stoploss_margin*curr_price)
+    limit_rate_calculated = get_limit_rate(sltp = sltp_price) 
     fresh_order = (breeze.place_order(stock_code=str(stock),
                     exchange_code="NFO",
                     product="optionplus",
@@ -198,21 +197,24 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
                     user_remark="Placing Order"))
     output_file.write('buy call at '+str(curr_price)+'with target '+str(target_margin*curr_price)+'and stoploss'+str(sltp_price)+'at time'+str(time)+'\n')
     print('buy call at ',curr_price,'with target ', target_margin*curr_price,'and stoploss',sltp_price,'at time',time)
-    if(fresh_order["Error"]!='None'):
+    print(fresh_order)
+    if(fresh_order["Error"]=='None'):
        fresh_order_id = fresh_order["Success"]["order_id"]
        detail = breeze.get_order_detail('NFO',fresh_order_id)
        cover_order_id = detail['Success'][0]['parent_order_id']
        order[5] = True
+       buy_flag = True
        my_orders[curr_price] = [curr_price_time[0], old_target, old_stoploss, time, True, True, fresh_order_id, cover_order_id]
        order_qty += 1
        total_orders += 1
        flag = True
        order[0] = curr_price_time[0]
+       return [curr_price_time[0], old_target, old_stoploss, time, True, True, fresh_order_id, cover_order_id]
     else:
        print("Error while placing buy order:",fresh_order)
 
   if flag:
-    if curr_price_time[0] > old_target and order[5]:
+    if curr_price_time[0] > old_target and buy_flag:
       # Place sell order
       order_time = datetime.now()
       try:
@@ -228,7 +230,7 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
       except Exception as error:
         # handle the exception
         print("An exception occurred while selling:", error, order)
-      if(fresh_order['Error'] != 'None'):
+      if(fresh_order['Error'] == 'None'):
          print("Error while selling:", fresh_order, order)
          return [order[0],old_target, old_stoploss, order[3], flag, order[5], order[6]. order[7]], pnl, order_qty
       else:
@@ -244,11 +246,12 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
 
         pnl += curr_price_time[0] - order[0]
         flag = False
+        buy_flag = False
         order_qty -= 1
         return [order[0],old_target, old_stoploss, order[3], flag, False, order[6], fresh_order_id], pnl, order_qty
 
 
-    if curr_price_time[0] < old_stoploss and order[5]:
+    if curr_price_time[0] < old_stoploss and buy_flag:
       # Place sell order
       order_time = datetime.now()
       try:
@@ -264,7 +267,7 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
       except Exception as error:
         # handle the exception
         print("An exception occurred while selling:", error, order)
-      if(fresh_order['Error'] != 'None'):
+      if(fresh_order['Error'] == 'None'):
          print("Error while selling:", fresh_order, order)
          return [order[0],old_target, old_stoploss, order[3], flag, order[5], order[6], order[7]], pnl, order_qty
       else:
@@ -280,6 +283,7 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
 
         pnl += curr_price_time[0] - order[0]
         flag = False
+        buy_flag = False
         order_qty -= 1
         return [order[0],old_target, old_stoploss, order[3], flag, False, order[6], fresh_order_id], pnl, order_qty
 
@@ -309,7 +313,7 @@ def update_target_sl(order, curr_price_time, pnl, order_qty):
       output_file.write('Order Unchanged \n')
       print('Order Unchanged')
 
-    return [order[0],new_target, new_stoploss, order[3], flag, order[5], order[6], order[7]], pnl, order_qty
+    return [order[0],new_target, new_stoploss, order[3], flag, buy_flag, order[6], order[7]], pnl, order_qty
 
 def start_websocket():
   print("Getting live data")
@@ -406,11 +410,11 @@ def on_ticks(ticks):
     # Update history
     history = update_history(history, curr_price)
 
-while True:
-   now = datetime.now()
-   if(now.hour >= 9 and now.minute >= 16) and (now.hour <= 15 and now.minute <= 29):
-      break
-   tp.sleep(60)
+# while True:
+#    now = datetime.now()
+#    if(now.hour >= 9 and now.minute >= 16) and (now.hour <= 15 and now.minute <= 29):
+#       break
+#    tp.sleep(60)
 
 # start_websocket()
 start_websocket()
