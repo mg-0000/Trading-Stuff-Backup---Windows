@@ -216,9 +216,9 @@ def get_spot_price(stock, date):
 
 return_list = []
 
-start_dates = '2024-01-17'
-end_dates = '2024-01-17'
-first_expiry = '2024-01-17'
+start_dates = '2024-01-18'
+end_dates = '2024-01-18'
+first_expiry = '2024-01-25'
 
 weekday_dates = get_weekday_dates(start_dates, end_dates)
 expiry_dates = get_expiry_dates(weekday_dates, first_expiry)
