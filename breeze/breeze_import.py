@@ -5,7 +5,7 @@ api_secret="409755400@8P#xT7009=x6~O58977333"
 session_token="32300759"
 breeze = BreezeConnect(api_key=api_key)
 breeze.generate_session(api_secret=api_secret, session_token=str(session_token))
-# print(breeze.get_customer_details(api_session=session_token))
+print(breeze.get_customer_details(api_session=session_token))
 
 
 # api_key="#1W894^w=4u2445s58QBY$4627c17435"
