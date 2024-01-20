@@ -175,7 +175,7 @@ def get_metrics(file):
   # Square off at EOD
   eod_price = float(df_calls.iloc[-1]['close'])
   for order_key in my_orders.keys():
-    if my_orders[order_key][4]:
+    if my_orders[order_key][5]:
       net_pnl += eod_price - my_orders[order_key][0]
       my_orders[order_key][4] = False
 
