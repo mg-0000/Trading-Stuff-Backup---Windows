@@ -40,20 +40,6 @@ def get_metrics(file):
 
     global new_pnl, total_orders
 
-    if curr_price_time[1] - order[3] < 10 and flag == True and (curr_price_time[0] <= old_stoploss or curr_price_time[0] >= old_target):
-      flag = False
-      return [order[0],old_target, old_stoploss, order[3], flag, False], pnl, order_qty
-    elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 1.02*order[0] and curr_price_time[0] > 0.98*order[0]):
-    # elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 0.98*order[0]):
-      flag = False
-      return [order[0],old_target, old_stoploss, order[3], flag, False], pnl, order_qty
-    elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] > old_stoploss and curr_price_time[0] < old_target):
-      flag = True
-      order_qty += 1
-      total_orders += 1
-      order[0] = curr_price_time[0] 
-      order[5] = True
-
     if flag:
       if curr_price_time[0] > old_target and order[5]:
         if(curr_price_time[1] - order[3] > 10):
@@ -134,7 +120,9 @@ def get_metrics(file):
       strike_price_order = curr_price
       target = target_margin*curr_price
       stoploss = stoploss_margin*curr_price
-      my_orders[curr_price] = [strike_price_order, target, stoploss, time, True, False] # Values {order_price, target, SL, order_time, active_order_flag, buy_trigger_flag}
+      order_qty += 1
+      total_orders += 1
+      my_orders[curr_price] = [strike_price_order, target, stoploss, time, True, True] # Values {order_price, target, SL, order_time, active_order_flag, buy_trigger_flag}
       # order_qty += 1
       # total_orders += 1
       ###
@@ -163,7 +151,7 @@ def get_metrics(file):
   max_order_qty = 1
   target_margin = 1.1
   stoploss_margin = 0.9
-  c_std = 4
+  c_std = 6
 
   ##########################
 
