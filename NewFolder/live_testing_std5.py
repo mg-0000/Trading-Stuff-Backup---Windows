@@ -41,17 +41,16 @@ def get_metrics(file):
 
     global new_pnl, total_orders
 
-    if curr_price_time[1] - order[3] <= 9 and flag == True and (curr_price_time[0] <= old_stoploss or curr_price_time[0] >= old_target):
+    if curr_price_time[1] - order[3] < 10 and flag == True and (curr_price_time[0] <= old_stoploss or curr_price_time[0] >= old_target):
       flag = False
       buy_flag = False
       return [order[0],old_target, old_stoploss, order[3], flag, False], pnl, order_qty
-    elif curr_price_time[1] - order[3] == 9 and flag == True and (curr_price_time[0] < 1.02*order[0] and curr_price_time[0] > 0.98*order[0]):
+    elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 1.02*order[0] and curr_price_time[0] > 0.98*order[0]):
     # elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 0.98*order[0]):
       flag = False
       buy_flag = False
       return [order[0],old_target, old_stoploss, order[3], flag, False], pnl, order_qty
-    elif curr_price_time[1] - order[3] == 9 and flag == True and (curr_price_time[0] > old_stoploss and curr_price_time[0] < old_target):
-    # elif curr_price_time[1] - order[3] == 9 and flag == True:
+    elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] > old_stoploss and curr_price_time[0] < old_target):
       flag = True
       order_qty += 1
       total_orders += 1
@@ -231,7 +230,6 @@ def get_spot_price(stock, date):
 
 return_list = []
 
-<<<<<<< HEAD
 # start_dates = '2023-08-10'
 # end_dates = '2024-01-18'
 # first_expiry = '2023-08-16'
@@ -239,11 +237,6 @@ return_list = []
 start_dates = '2024-01-18'
 end_dates = '2024-01-18'
 first_expiry = '2024-01-25'
-=======
-start_dates = '2024-01-17'
-end_dates = '2024-01-17'
-first_expiry = '2024-01-17'
->>>>>>> parent of a83857b (Commit stuff)
 
 weekday_dates = get_weekday_dates(start_dates, end_dates)
 expiry_dates = get_expiry_dates(weekday_dates, first_expiry)
