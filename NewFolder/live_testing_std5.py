@@ -151,7 +151,7 @@ def get_metrics(file):
   max_order_qty = 1
   target_margin = 1.1
   stoploss_margin = 0.9
-  c_std = 6
+  c_std = 5
 
   ##########################
 
