@@ -181,17 +181,18 @@ import os
 
 ## New strike price
 def get_spot_price(stock, date):
-  path = 'Data/' + stock + '_30minute' + date[:4] + '_' + date[5:7] + '_' + date[8:10] + '.csv'
+  path = 'Data/' + stock + '_5minute' + date[:4] + '_' + date[5:7] + '_' + date[8:10] + '.csv'
   # print(path)
   next_date = (datetime.strptime(date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
   if(os.path.isfile(path)==False):
-      historical_data.get_equity_historical_data(start_date = str(date) + "T09:30:00.000Z", end_date = str(date) + "T15:30:00.000Z", stock_code=stock, time_interval="30minute")
+      historical_data.get_equity_historical_data(start_date = str(date) + "T09:30:00.000Z", end_date = str(date) + "T15:30:00.000Z", stock_code=stock, time_interval="5minute")
       if(os.path.isfile(path)==False):
           print("No data for date", date)
           return 0
   df = pd.read_csv(path)
   # spot = float(df.iloc[:]['open'].mean())
-  spot = float(df.iloc[0]['open'])
+  spot = df[df['datetime'].str.contains("09:35:00")].index[0]
+  spot = float(df.iloc[spot]['open'])
 
   # spot =  44800
 
@@ -200,14 +201,14 @@ def get_spot_price(stock, date):
   else:
       spot = (spot//100)*100
 
-  # print(spot)
+  print(spot)
   return spot
 
 return_list = []
 
-start_dates = '2023-11-30'
-end_dates = '2024-01-18'
-first_expiry = '2023-12-06'
+start_dates = '2024-01-17'
+end_dates = '2024-01-17'
+first_expiry = '2024-01-17'
 
 weekday_dates = get_weekday_dates(start_dates, end_dates)
 expiry_dates = get_expiry_dates(weekday_dates, first_expiry)

@@ -1,12 +1,7 @@
-def round_nearest(n):
-  tmp = n*10 - int(n*10)
-  if(tmp < 0.5):
-    return round(round(n,1),2)
-  elif(tmp==0.5):
-    return round(round(n,1) + 0.05,2)
-  else:
-    return round(round(n,1) - 0.05,2)
-  
-while True:
-    a = float(input("Enter sltp"))
-    print(round_nearest(0.95*a))
+import pandas as pd
+
+path = "Data/CNXBAN_30minute2023_12_26.csv"
+df = pd.read_csv(path)
+closest_time = "09:30:00"
+df2 = df[df['datetime'].str.contains(closest_time)].index[0]
+print(df.iloc[df2]['open'])
