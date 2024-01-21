@@ -122,6 +122,7 @@ def get_metrics(file):
       stoploss = stoploss_margin*curr_price
       order_qty += 1
       total_orders += 1
+      print("Order placed at ",ticks['datetime'][-8:])
       my_orders[curr_price] = [strike_price_order, target, stoploss, time, True, True] # Values {order_price, target, SL, order_time, active_order_flag, buy_trigger_flag}
       # order_qty += 1
       # total_orders += 1
@@ -204,9 +205,9 @@ def get_spot_price(stock, date):
 
 return_list = []
 
-start_dates = '2024-01-18'
+start_dates = '2023-11-30'
 end_dates = '2024-01-18'
-first_expiry = '2024-01-25'
+first_expiry = '2023-12-06'
 
 weekday_dates = get_weekday_dates(start_dates, end_dates)
 expiry_dates = get_expiry_dates(weekday_dates, first_expiry)
@@ -254,7 +255,7 @@ for i in range(len(weekday_dates)):
           print("No data for put for expiry", expiry, "and date", date, " and strike", str(int(mean_spot)))
           continue
   orders, pnl = get_metrics(path)
-  return_list.append(["Put", date, orders, pnl])
+  return_list.append(["Put", date, expiry, orders, pnl])
   print("For PUT Expiry:", expiry, "Date:", date, "Orders:", orders, "PnL:", pnl)
 
   # Save return_list to a file output.txt

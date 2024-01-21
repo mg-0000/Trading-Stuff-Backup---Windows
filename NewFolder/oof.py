@@ -6,6 +6,11 @@
 import numpy as np
 import pandas as pd
 import math
+from datetime import datetime, timedelta
+import os
+import sys
+sys.path.insert(1, '../breeze')
+import historical_data
 
 def update_history(history, current_price):
     for i in range(len(history) - 1):
@@ -13,7 +18,7 @@ def update_history(history, current_price):
     history[-1] = current_price
     return history
 
-class strategy_class:
+class fixed_strike_strategy_class:
     # Initiaization
     weights = []
     total_orders = 0
@@ -32,7 +37,7 @@ class strategy_class:
     c_std = 4
     ##########################
 
-    def __init__(self) -> None:
+    def __init__(self, strike, date, expiry, action) -> None:
         # Initialisation
         temp = np.arange(-30,0,2)
         temp = temp/15    ##  This can be a parameter
@@ -40,6 +45,11 @@ class strategy_class:
         temp = np.exp(temp)
         self.weights = temp
         print(self.weights)
+
+        self.strike = strike
+        self.date = date
+        self.expiry = expiry
+        self.action = action
 
         pass
 
@@ -56,26 +66,14 @@ class strategy_class:
         old_stoploss = order[2]
         flag = order[4]
 
-        if curr_price_time[1] - order[3] < 10 and flag == True and (curr_price_time[0] <= old_stoploss or curr_price_time[0] >= old_target):
-          flag = False
-          return [order[0],old_target, old_stoploss, order[3], flag, order[5]], pnl, order_qty
-        elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 1.02*order[0] and curr_price_time[0] > 0.98*order[0]):
-          flag = False
-          return [order[0],old_target, old_stoploss, order[3], flag, order[5]], pnl, order_qty
-        elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] > old_stoploss and curr_price_time[0] < old_target):
-          flag = True
-          self.order_qty += 1
-          self.total_orders += 1
-          order[0] = curr_price_time[0] 
-
         if flag:
           if curr_price_time[0] > old_target:
             print(f'Order bought at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
             pnl += curr_price_time[0] - order[0]
-            self.orders_list.append([curr_price_time[0] - order[0], order[3], curr_price_time[1], order[5], curr_price_time[2]])
+            self.orders_list.append([curr_price_time[0] - order[0], order[3], curr_price_time[1], order[5], curr_price_time[2]])  # [order pnl, order buy time, order sell time, real buy time, real sell time]
             flag = False
             order_qty -= 1
-            return [order[0],old_target, old_stoploss, order[3], flag, order[5]], pnl, order_qty
+            return [order[0],old_target, old_stoploss, order[3], flag, order[5], curr_price_time[2]], pnl, order_qty
 
 
           if curr_price_time[0] < old_stoploss:
@@ -90,7 +88,7 @@ class strategy_class:
             self.orders_list.append([curr_price_time[0] - order[0], order[3], curr_price_time[1], order[5], curr_price_time[2]])
             flag = False
             order_qty -= 1
-            return [order[0],old_target, old_stoploss, order[3], flag, order[5]], pnl, order_qty
+            return [order[0],old_target, old_stoploss, order[3], flag, order[5], curr_price_time[2]], pnl, order_qty
 
           decay_factor = (5/100)*math.exp(-(curr_price_time[1] - order[3])/20) # Linearly vary between 0.1% to 1% between 1 sec to 30 sec (in %)
 
@@ -110,7 +108,7 @@ class strategy_class:
             new_target = old_target
             new_stoploss = old_stoploss
 
-          return [order[0],new_target, new_stoploss, order[3], flag, order[5]], pnl, order_qty
+          return [order[0],new_target, new_stoploss, order[3], flag, order[5], order[6]], pnl, order_qty
     
     def on_ticks(self, ticks):
       curr_price = float(ticks['close'])
@@ -125,7 +123,9 @@ class strategy_class:
         strike_price_order = curr_price
         target = self.target_margin*curr_price
         stoploss = self.stoploss_margin*curr_price
-        self.my_orders[curr_price] = [strike_price_order, target, stoploss, time, True, real_time] # Values {order_price, target, SL, order_time, active_order_flag, real_time}
+        self.order_qty += 1
+        self.total_orders += 1
+        self.my_orders[curr_price] = [strike_price_order, target, stoploss, time, True, real_time, 0] # Values {order_price, target, SL, order_time, active_order_flag, buy_real_time, real_sell_time}
 
       order_copy = self.my_orders.copy()
       if len(self.my_orders)>0:
@@ -146,9 +146,28 @@ class strategy_class:
           self.order_qty -= 1   # Selling
           # del self.my_orders[i]
 
-    def 
+    # def start_data_stream(self):
+    #   path = 'Data/CNXBAN' + '_options_' + self.expiry[:4] + '_' + self.expiry[5:7] + '_' + self.expiry[8:10] + '_' + self.action + str(int(self.strike)) + '_1second' + self.date[:4] + '_' + self.date[5:7] + '_' + self.date[8:10] + '.csv'
+    #   if(os.path.isfile(path)==False):
+    #     historical_data.get_option_historical_data(start_date = str(self.date) + "T09:30:00.000Z", end_date = str(self.date) + "T15:30:00.000Z", stock_code="CNXBAN", expiry=self.expiry, strike=str(int(self.strike)), right=self.action, time_interval="1second")
+    #     if(os.path.isfile(path)==False):
+    #       self.expiry = (datetime.strptime(self.expiry, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+    #       historical_data.get_option_historical_data(start_date = str(self.date) + "T09:30:00.000Z", end_date = str(self.date) + "T15:30:00.000Z", stock_code="CNXBAN", expiry=self.expiry, strike=str(int(self.strike)), right=self.action, time_interval="1second")
+    #       if(os.path.isfile(path)==False):
+    #         self.expiry = (datetime.strptime(self.expiry, "%Y-%m-%d") - timedelta(days=2)).strftime("%Y-%m-%d")
+    #         historical_data.get_option_historical_data(start_date = str(self.date) + "T09:30:00.000Z", end_date = str(self.date) + "T15:30:00.000Z", stock_code="CNXBAN", expiry=self.expiry, strike=str(int(self.strike)), right=self.action, time_interval="1second")
+    #         if(os.path.isfile(path)==False):
+    #           print("No data for call for expiry", self.expiry, "and date", self.date, "and strike", str(int(self.strike)))
+    #           return
+    #   df = pd.read_csv(path)
+    #   for idx, data in df.iterrows():
+    #     self.on_ticks(df.iloc[idx])
+    #   eod = df.iloc[-1]['datetime'][-8:]
+    #   self.square_off_all(float(df.iloc[-1]['close']), self.time, eod)
+    #   print("Done for strike", self.strike, "and date", self.date, "and expiry", self.expiry)
+    #   print("Total orders placed:", self.total_orders, "and net pnl:", self.net_pnl)
+    #   return self.orders_list
 
-        
     def get_orders_list(self):
       return self.orders_list
     
