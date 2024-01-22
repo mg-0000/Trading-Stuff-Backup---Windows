@@ -173,7 +173,7 @@ def get_equity_historical_data(start_date, end_date, stock_code, time_interval =
 
     return(put_data)
 
-date = "2023-11-23"
+date = "2023-12-26"
 expiry = "2023-11-30"
 strike = 43400
 right = "call"

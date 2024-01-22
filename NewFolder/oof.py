@@ -22,16 +22,13 @@ def update_history(history, current_price):
     return history
 
 class fixed_strike_strategy_class:
-    # Initiaization
-    weights = []
-    total_orders = 0
-    time = 0
-    order_qty = 0
-    net_pnl = 0
-    avg_array = []
-    history = []
-    my_orders = {}
-    orders_list = []    # [order pnl, order buy time, order sell time]
+
+    # Initialisation
+    temp = np.arange(-30,0,2)
+    temp = temp/15    ##  This can be a parameter
+    temp = np.flip(temp)
+    temp = np.exp(temp)
+    weights = temp
 
     #### Hyperparameters ####
     max_order_qty = 1
@@ -41,17 +38,20 @@ class fixed_strike_strategy_class:
     ##########################
 
     def __init__(self, strike, date, expiry, action) -> None:
-        # Initialisation
-        temp = np.arange(-30,0,2)
-        temp = temp/15    ##  This can be a parameter
-        temp = np.flip(temp)
-        temp = np.exp(temp)
-        self.weights = temp
-
+        
         self.strike = strike
         self.date = date
         self.expiry = expiry
         self.action = action
+
+        self.total_orders = 0
+        self.time = 0
+        self.order_qty = 0
+        self.net_pnl = 0
+        self.avg_array = []
+        self.history = []
+        self.my_orders = {}
+        self.orders_list = []  
 
         pass
 
@@ -70,7 +70,8 @@ class fixed_strike_strategy_class:
 
         if flag:
           if curr_price_time[0] > old_target:
-            print(f'Order bought at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
+            # if(curr_price_time[1] - order[3]>10):
+            print(f'TARGET HIT Order bought at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
             pnl += curr_price_time[0] - order[0]
             self.orders_list.append([curr_price_time[0] - order[0], order[3], curr_price_time[1], order[5], curr_price_time[2]])  # [order pnl, order buy time, order sell time, real buy time, real sell time]
             flag = False
@@ -79,12 +80,17 @@ class fixed_strike_strategy_class:
 
 
           if curr_price_time[0] < old_stoploss:
-            if old_stoploss - order[0] > 0:
-              print(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
+            # if old_stoploss - order[0] > 0:
+              # if(curr_price_time[1] - order[3]>10):
+              # print(f'STOPLOSS HIT Order at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
               # pass
-            else:
-              print(f'Order at {order[0]} has been executed at {curr_price_time[0]} and premium lost: {curr_price_time[0] - order[0]}')
+            # else:
+              # if(curr_price_time[1] - order[3]>10):
+              # print(f'STOPLOSS HIT Order at {order[0]} has been executed at {curr_price_time[0]} and premium lost: {curr_price_time[0] - order[0]}')
               # pass
+
+            if order[5]=="09:35:00":
+              print("Shouldnt happen", order)
 
             pnl += curr_price_time[0] - order[0]
             self.orders_list.append([curr_price_time[0] - order[0], order[3], curr_price_time[1], order[5], curr_price_time[2]])
@@ -128,6 +134,7 @@ class fixed_strike_strategy_class:
         self.order_qty += 1
         self.total_orders += 1
         self.my_orders[curr_price] = [strike_price_order, target, stoploss, self.time, True, real_time, 0] # Values {order_price, target, SL, order_time, active_order_flag, buy_real_time, real_sell_time}
+        # print("Placing buy order",self.my_orders[curr_price])
 
       order_copy = self.my_orders.copy()
       if len(self.my_orders)>0:
@@ -146,10 +153,18 @@ class fixed_strike_strategy_class:
           self.orders_list.append([self.my_orders[i][0] - curr_price, self.my_orders[i][3], time, self.my_orders[i][5], real_time])
           self.net_pnl += self.my_orders[i][0] - curr_price
           self.order_qty -= 1   # Selling
+          print("Squaring off at time", real_time, 'for profit', self.my_orders[i][0] - curr_price)
           # del self.my_orders[i]
 
     def get_orders_list(self):
       return self.orders_list, self.net_pnl, self.total_orders
+    
+    def get_open_orders(self):
+      return_list = []
+      for order_key in self.my_orders.keys():
+        if self.my_orders[order_key][4]==True:
+          return_list.append(self.my_orders[order_key])
+      return return_list
     
 
 
@@ -213,7 +228,6 @@ class fixed_date_run_test:
     df_indices = df[df['datetime'].str.contains(closest_time)].index[0]
 
     spot = float(df.iloc[df_indices]['open'])
-    print("atm price:", spot)
     if(spot%100>=50):
         spot = (spot//100 + 1)*100
     else:
@@ -244,14 +258,14 @@ class fixed_date_run_test:
     if(spot==0):
       print("No data")
       return 0
-    
-    print("here2", spot)
-    
+        
     self.fixed_strike_strategy_objects.append(fixed_strike_strategy_class(spot, self.date, self.expiry, self.action))
     data_path = self.get_option_data(spot, self.action)
     if data_path == 0:
       return 0
     df = pd.read_csv(data_path)
+
+    print("This should be zero ", self.fixed_strike_strategy_objects[-1].net_pnl)
 
     now_time = curr_time
     while datetime.strptime(now_time, time_format) < datetime.strptime(end_time, time_format):
@@ -263,7 +277,6 @@ class fixed_date_run_test:
         self.pnl += pnl
         self.total_orders += tot_orders
         self.fixed_strike_strategy_objects.append(fixed_strike_strategy_class(spot, self.date, self.expiry, self.action))
-        print("change in spot. New spot:", spot, "Prev spot:", prev_spot)
         print("Profit in this leg:", pnl, "Total orders in this leg:", tot_orders)
         prev_spot = spot
         try:
@@ -275,9 +288,8 @@ class fixed_date_run_test:
           break
         df = pd.read_csv(data_path)
       
-      print(len(df[df['datetime'].str.contains(curr_time)].index)==0)
       while (len(df[df['datetime'].str.contains(curr_time)].index)==0):
-        curr_time = datetime.strptime(curr_time, time_format) + timedelta(minutes=1)
+        curr_time = (datetime.strptime(curr_time, time_format) + timedelta(minutes=1)).strftime(time_format)
       i = df[df['datetime'].str.contains(curr_time)].index[0]
       
       while datetime.strptime(now_time, time_format) < datetime.strptime(next_time, time_format) and datetime.strptime(now_time, time_format) < datetime.strptime(end_time, time_format):
@@ -289,6 +301,14 @@ class fixed_date_run_test:
         next_time = self.get_next_time(curr_time)
       else:
         curr_time = next_time
+    for strat in self.fixed_strike_strategy_objects:
+      _, old_pnl, _ = strat.get_orders_list()
+      strat.square_off_all(float(df.iloc[i]['close']), strat.time, now_time)
+      order_list, pnl, tot_orders = strat.get_orders_list()
+      self.orders_list.extend(order_list)
+      if(old_pnl!=pnl):
+        self.pnl += pnl
+        self.total_orders += tot_orders
   
   def get_pnl(self):
     return self.pnl
@@ -301,9 +321,9 @@ class fixed_date_run_test:
 
 output_file = open("live_output.txt", "w")
 
-start_date = "2023-12-16"
-end_date = "2024-01-17"
-first_expiry = "2023-12-19"
+start_date = "2023-12-14"
+end_date = "2024-01-18"
+first_expiry = "2023-12-20"
 
 weekday_dates = get_weekday_dates(start_date, end_date)
 expiry_dates = get_expiry_dates(weekday_dates, first_expiry)
@@ -323,14 +343,19 @@ for i in range(len(weekday_dates)):
   orders_lists[str(date + "put")] = test.get_orders_list()
   print("Date:", date, " PUT. Orders:", put_orders, "Net Pnl:", put_pnl)
 
-  test = fixed_date_run_test(date, expiry, "CNXBAN", "call")
-  test.run_strategy()
-  call_pnl = test.get_pnl()
-  call_orders = test.get_total_orders()
-  results.append(['Call', date, call_orders, call_pnl])
-  orders_lists[str(date + "call")] = test.get_orders_list()
-  print("Date:", date, " CALL. Orders:", call_orders, "Net Pnl:", call_pnl)
+  del test
 
-output_file.write(results)
+  test2 = fixed_date_run_test(date, expiry, "CNXBAN", "call")
+  test2.run_strategy()
+  call_pnl = test2.get_pnl()
+  call_orders = test2.get_total_orders()
+  results.append(['Call', date, call_orders, call_pnl])
+  orders_lists[str(date + "call")] = test2.get_orders_list()
+  print("Date:", date, " CALL. Orders:", call_orders, "Net Pnl:", call_pnl) 
+
+  del test2
+
+output_file.write("results = " + str(results) + '\n')
+output_file.write("orders_list = " + str(orders_lists))
 output_file.close()
 print("results = ", results)
