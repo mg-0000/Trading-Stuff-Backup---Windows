@@ -14,6 +14,14 @@ sys.path.insert(1, '../support')
 from dates import *
 import historical_data
 import time
+import threading
+
+# def keep_api_active():
+#   while True:
+#     time.sleep(240)
+#     historical_data.breeze.get_funds()
+# t1 = threading.Thread(target=keep_api_active)
+# t1.start()
 
 def update_history(history, current_price):
     for i in range(len(history) - 1):
@@ -292,14 +300,14 @@ class fixed_date_run_test:
         self.total_orders += tot_orders - old_tot_orders
         self.fixed_strike_strategy_objects.append(fixed_strike_strategy_class(spot, self.date, self.expiry, self.action))
 
-        print("Profit in this leg:", pnl, "Total orders in this leg:", tot_orders)
+        print("Profit in this leg:", pnl, "Total profit", self.pnl, "Total orders in this leg:", tot_orders)
 
         prev_spot = spot
 
         try:
           data_path = self.get_option_data(spot, self.action)
         except:
-          time.sleep(60)
+          time.sleep(65)
           data_path = self.get_option_data(spot, self.action)
         if data_path == 0:
           break
@@ -342,6 +350,7 @@ class fixed_date_run_test:
       else:
         curr_time = next_time
 
+    print("Sqaring off at eod. CUrrent pnl is ", self.pnl)
     for strat in self.fixed_strike_strategy_objects:
       _, old_pnl, old_tot_orders = strat.get_orders_list()
       strat.square_off_all(float(df.iloc[i]['close']), strat.time, now_time)
@@ -349,6 +358,7 @@ class fixed_date_run_test:
       self.orders_list.extend(order_list)
       self.pnl += pnl - old_pnl
       self.total_orders += tot_orders - old_tot_orders
+    print("Sqaring off at eod. New pnl is ", self.pnl)
   
   def get_pnl(self):
     return self.pnl
@@ -364,11 +374,10 @@ class fixed_date_run_test:
       return_list.append(tmp)
     return return_list
 
-output_file = open("live_output_2.txt", "w")
 
-start_date = "2023-12-14"
-end_date = "2024-01-23"
-first_expiry = "2023-12-20"
+start_date = "2023-11-09"
+end_date = "2024-01-24"
+first_expiry = "2023-11-15"
 
 # start_date = "2024-01-11"
 # end_date = "2024-01-11"
@@ -384,6 +393,8 @@ orders_lists = []
 for i in range(len(weekday_dates)):
   date = weekday_dates[i]
   expiry = expiry_dates[i]
+
+  output_file = open("live_output_2.txt", "w")
 
   test = fixed_date_run_test(date, expiry, "CNXBAN", "put")
   test.run_strategy()
@@ -407,12 +418,21 @@ for i in range(len(weekday_dates)):
 
   del test2
 
+  
+  output_file.write("results = " + str(results) + '\n')
+  output_file.close()
+
+  orders_lists_df = pd.DataFrame(orders_lists, columns = ['Date', 'Type', 'PnL', 'Buy Time', 'Sell Time', 'Real Buy Time', 'Real Sell Time'])
+  orders_lists_df.to_csv("orders_lists_2.csv")
+
+  time.sleep(50)
+
 # results = pd.DataFrame(results, columns = ['Type', 'Date', 'Orders', 'Net Pnl'])
 
 output_file.write("results = " + str(results) + '\n')
 output_file.close()
 
-orders_lists = pd.DataFrame(orders_lists, columns = ['Date', 'Type', 'PnL', 'Buy Time', 'Sell Time', 'Real Buy Time', 'Real Sell Time'])
-orders_lists.to_csv("orders_lists_2.csv")
+orders_lists_df = pd.DataFrame(orders_lists, columns = ['Date', 'Type', 'PnL', 'Buy Time', 'Sell Time', 'Real Buy Time', 'Real Sell Time'])
+orders_lists_df.to_csv("orders_lists_2.csv")
 
 print("results = ", results)

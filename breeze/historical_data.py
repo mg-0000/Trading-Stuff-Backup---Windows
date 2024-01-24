@@ -173,7 +173,7 @@ def get_equity_historical_data(start_date, end_date, stock_code, time_interval =
 
     return(put_data)
 
-date = "2023-12-26"
+date = "2024-01-24"
 expiry = "2023-11-30"
 strike = 43400
 right = "call"
@@ -187,5 +187,7 @@ right = "call"
 # print(open_close)
 # print(tmp)
 # date = "2024-01-03"
-# tmp = get_equity_historical_data(start_date = str(date) + "T09:30:00.000Z", end_date = str(date) + "T15:30:00.000Z", stock_code="CNXBAN", time_interval="30minute")
-# print(tmp)
+tmp = get_equity_historical_data(start_date = str(date) + "T09:30:00.000Z", end_date = str(date) + "T15:30:00.000Z", stock_code="CNXBAN", time_interval="30minute")
+print(tmp)
+df_indices = tmp[tmp['datetime'].str.contains("09:30:00")].index[0]
+print(df_indices)

@@ -140,9 +140,9 @@ def get_expiry_dates(dates, first_expiry):
 
         # to correct the expiry holiday on 29th November
         if(first_expiry==datetime.strptime("2023-11-29", "%Y-%m-%d")):
-            first_expiry -= timedelta(days=1)
-        if(first_expiry==datetime.strptime("2023-12-07", "%Y-%m-%d")):
             first_expiry += timedelta(days=1)
+        if(first_expiry==datetime.strptime("2023-12-07", "%Y-%m-%d")):
+            first_expiry -= timedelta(days=1)
 
         # to account for the change in first_expiry, if any
         if(len(expiries)>0):
@@ -158,9 +158,9 @@ def get_expiry_dates(dates, first_expiry):
 
 
 # # Example usage
-# start_date = "2023-09-11"
-# end_date = "2023-09-21"
+# start_date = "2023-11-10"
+# end_date = "2023-12-21"
 # weekday_dates = get_weekday_dates(start_date, end_date)
 # print(weekday_dates)
-# expiry_dates = get_expiry_dates(weekday_dates, "2023-09-13")
+# expiry_dates = get_expiry_dates(weekday_dates, "2023-10-15")
 # print(expiry_dates)
