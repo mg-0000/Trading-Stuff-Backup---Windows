@@ -187,7 +187,7 @@ right = "call"
 # print(open_close)
 # print(tmp)
 # date = "2024-01-03"
-tmp = get_equity_historical_data(start_date = str(date) + "T09:30:00.000Z", end_date = str(date) + "T15:30:00.000Z", stock_code="CNXBAN", time_interval="30minute")
-print(tmp)
-df_indices = tmp[tmp['datetime'].str.contains("09:30:00")].index[0]
-print(df_indices)
+# tmp = get_equity_historical_data(start_date = str(date) + "T09:30:00.000Z", end_date = str(date) + "T15:30:00.000Z", stock_code="CNXBAN", time_interval="30minute")
+# print(tmp)
+# df_indices = tmp[tmp['datetime'].str.contains("09:30:00")].index[0]
+# print(df_indices)
