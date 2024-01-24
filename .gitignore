@@ -1,2 +1,4 @@
 NewFolder/Data/
-breeze/__pychache__/breeze_import.cpython-310.pyc
+breeze/__pychache__/breeze_import.cpython-310.py
+*.txt
+*.csv

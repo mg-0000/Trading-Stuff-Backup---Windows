@@ -89,6 +89,14 @@ def get_weekday_dates(start_date, end_date, interval = 1):
             if(current_date==datetime.strptime("2024-01-03", "%Y-%m-%d")):
                 current_date += timedelta(days=1)
                 continue
+            # Not available on 22nd January
+            if(current_date==datetime.strptime("2024-01-22", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
+            # Not available on 26rd January
+            if(current_date==datetime.strptime("2024-01-26", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
             
             result.append(current_date.strftime("%Y-%m-%d"))
         

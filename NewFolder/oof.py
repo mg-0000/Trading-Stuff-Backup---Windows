@@ -35,6 +35,7 @@ class fixed_strike_strategy_class:
     target_margin = 1.1
     stoploss_margin = 0.9
     c_std = 5
+    max_loss = 100
     ##########################
 
     def __init__(self, strike, date, expiry, action) -> None:
@@ -159,6 +160,12 @@ class fixed_strike_strategy_class:
     def get_orders_list(self):
       return self.orders_list, self.net_pnl, self.total_orders
     
+    def get_pnl(self):
+      return self.net_pnl
+    
+    def get_total_orders(self):
+      return self.total_orders
+    
     def get_open_orders(self):
       return_list = []
       for order_key in self.my_orders.keys():
@@ -174,6 +181,7 @@ class fixed_date_run_test:
   orders_list = []
   pnl = 0
   total_orders = 0
+  max_loss = -50
 
   def __init__(self, date, expiry, stock, action) -> None:
     self.date = date
@@ -267,18 +275,27 @@ class fixed_date_run_test:
 
     print("This should be zero ", self.fixed_strike_strategy_objects[-1].net_pnl)
 
+    to_break = False
     now_time = curr_time
-    while datetime.strptime(now_time, time_format) < datetime.strptime(end_time, time_format):
+    while datetime.strptime(now_time, time_format) < datetime.strptime(end_time, time_format) and to_break==False:
+
       spot = self.get_spot(curr_time)
+      
       if(prev_spot!=spot):
+
+        _, old_pnl, old_tot_orders = self.fixed_strike_strategy_objects[-1].get_orders_list()
         self.fixed_strike_strategy_objects[-1].square_off_all(float(df.iloc[i]['close']), self.fixed_strike_strategy_objects[-1].time, now_time)
         order_list, pnl, tot_orders = self.fixed_strike_strategy_objects[-1].get_orders_list()
+
         self.orders_list.extend(order_list)
-        self.pnl += pnl
-        self.total_orders += tot_orders
+        self.pnl += pnl - old_pnl
+        self.total_orders += tot_orders - old_tot_orders
         self.fixed_strike_strategy_objects.append(fixed_strike_strategy_class(spot, self.date, self.expiry, self.action))
+
         print("Profit in this leg:", pnl, "Total orders in this leg:", tot_orders)
+
         prev_spot = spot
+
         try:
           data_path = self.get_option_data(spot, self.action)
         except:
@@ -293,22 +310,45 @@ class fixed_date_run_test:
       i = df[df['datetime'].str.contains(curr_time)].index[0]
       
       while datetime.strptime(now_time, time_format) < datetime.strptime(next_time, time_format) and datetime.strptime(now_time, time_format) < datetime.strptime(end_time, time_format):
+        
+        old_pnl = self.fixed_strike_strategy_objects[-1].get_pnl()
+        old_tot_orders = self.fixed_strike_strategy_objects[-1].get_total_orders()
         self.fixed_strike_strategy_objects[-1].on_ticks(df.iloc[i])
+        new_pnl = self.fixed_strike_strategy_objects[-1].get_pnl()
+        new_tot_orders = self.fixed_strike_strategy_objects[-1].get_total_orders()
+        
+        self.pnl += new_pnl - old_pnl
+        self.total_orders += new_tot_orders - old_tot_orders
+        
         now_time = df.iloc[i]['datetime'][-8:]
+        
+        if(self.pnl<self.max_loss):
+          print("Hit Max Loss at pnl", self.pnl, self.max_loss)
+          _, old_pnl, old_tot_orders = self.fixed_strike_strategy_objects[-1].get_orders_list()
+          self.fixed_strike_strategy_objects[-1].square_off_all(float(df.iloc[i]['close']),self.fixed_strike_strategy_objects[-1].time, now_time)
+          order_list, pnl, tot_orders = self.fixed_strike_strategy_objects[-1].get_orders_list()
+          self.pnl += pnl - old_pnl
+          self.total_orders += tot_orders - old_tot_orders
+          print("Hit Max Loss at pnl", self.pnl)
+          to_break = True
+          break
+        
+        
         i = i + 1
+      
       if(next_time != "15:30:00"):
         curr_time = next_time
         next_time = self.get_next_time(curr_time)
       else:
         curr_time = next_time
+
     for strat in self.fixed_strike_strategy_objects:
-      _, old_pnl, _ = strat.get_orders_list()
+      _, old_pnl, old_tot_orders = strat.get_orders_list()
       strat.square_off_all(float(df.iloc[i]['close']), strat.time, now_time)
       order_list, pnl, tot_orders = strat.get_orders_list()
       self.orders_list.extend(order_list)
-      if(old_pnl!=pnl):
-        self.pnl += pnl
-        self.total_orders += tot_orders
+      self.pnl += pnl - old_pnl
+      self.total_orders += tot_orders - old_tot_orders
   
   def get_pnl(self):
     return self.pnl
@@ -317,20 +357,30 @@ class fixed_date_run_test:
     return self.total_orders
   
   def get_orders_list(self):
-    return self.orders_list
+    return_list = []
+    for order in self.orders_list:
+      tmp = [self.date, self.action]
+      tmp.extend(order)
+      return_list.append(tmp)
+    return return_list
 
-output_file = open("live_output.txt", "w")
+output_file = open("live_output_2.txt", "w")
 
 start_date = "2023-12-14"
-end_date = "2024-01-18"
+end_date = "2024-01-23"
 first_expiry = "2023-12-20"
+
+# start_date = "2024-01-11"
+# end_date = "2024-01-11"
+# first_expiry = "2024-01-17"
 
 weekday_dates = get_weekday_dates(start_date, end_date)
 expiry_dates = get_expiry_dates(weekday_dates, first_expiry)
 print(weekday_dates)
 
 results = []
-orders_lists = {}
+orders_dict = {}
+orders_lists = []
 for i in range(len(weekday_dates)):
   date = weekday_dates[i]
   expiry = expiry_dates[i]
@@ -340,7 +390,8 @@ for i in range(len(weekday_dates)):
   put_pnl = test.get_pnl()
   put_orders = test.get_total_orders()
   results.append(['Put', date, put_orders, put_pnl])
-  orders_lists[str(date + "put")] = test.get_orders_list()
+  orders_dict[str(date + " put")] = test.get_orders_list()
+  orders_lists.extend(test.get_orders_list())
   print("Date:", date, " PUT. Orders:", put_orders, "Net Pnl:", put_pnl)
 
   del test
@@ -350,12 +401,18 @@ for i in range(len(weekday_dates)):
   call_pnl = test2.get_pnl()
   call_orders = test2.get_total_orders()
   results.append(['Call', date, call_orders, call_pnl])
-  orders_lists[str(date + "call")] = test2.get_orders_list()
+  orders_dict[str(date + " call")] = test2.get_orders_list()
+  orders_lists.extend(test2.get_orders_list())
   print("Date:", date, " CALL. Orders:", call_orders, "Net Pnl:", call_pnl) 
 
   del test2
 
+# results = pd.DataFrame(results, columns = ['Type', 'Date', 'Orders', 'Net Pnl'])
+
 output_file.write("results = " + str(results) + '\n')
-output_file.write("orders_list = " + str(orders_lists))
 output_file.close()
+
+orders_lists = pd.DataFrame(orders_lists, columns = ['Date', 'Type', 'PnL', 'Buy Time', 'Sell Time', 'Real Buy Time', 'Real Sell Time'])
+orders_lists.to_csv("orders_lists_2.csv")
+
 print("results = ", results)
