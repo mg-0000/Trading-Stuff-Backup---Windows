@@ -296,7 +296,7 @@ class fixed_date_run_test:
         self.fixed_strike_strategy_objects[-1].square_off_all(float(df.iloc[i]['close']), self.fixed_strike_strategy_objects[-1].time, now_time)
         order_list, pnl, tot_orders = self.fixed_strike_strategy_objects[-1].get_orders_list()
 
-        self.orders_list.extend(order_list)
+        # self.orders_list.extend(order_list) 
         self.pnl += pnl - old_pnl
         self.total_orders += tot_orders - old_tot_orders
         self.fixed_strike_strategy_objects.append(fixed_strike_strategy_class(spot, self.date, self.expiry, self.action))
@@ -368,6 +368,7 @@ class fixed_date_run_test:
     return self.total_orders
   
   def get_orders_list(self):
+    # print(self.orders_list)
     return_list = []
     for order in self.orders_list:
       tmp = [self.date, self.action]
@@ -401,8 +402,11 @@ for i in range(len(weekday_dates)):
   put_orders = test.get_total_orders()
   results.append(['Put', date, put_orders, put_pnl])
   orders_dict[str(date + " put")] = test.get_orders_list()
-  orders_lists.extend(test.get_orders_list())
-  print("Date:", date, " PUT. Orders:", put_orders, "Net Pnl:", put_pnl)
+  # print(test.get_orders_list())
+  # orders_lists.extend(test.get_orders_list())
+  orders_lists += test.get_orders_list()
+  # print(test.get_orders_list())
+  print("Date:", date, " PUT. Orders:", put_orders, "Net Pnl:", put_pnl, len(orders_lists))
 
   del test
 
@@ -412,8 +416,11 @@ for i in range(len(weekday_dates)):
   call_orders = test2.get_total_orders()
   results.append(['Call', date, call_orders, call_pnl])
   orders_dict[str(date + " call")] = test2.get_orders_list()
-  orders_lists.extend(test2.get_orders_list())
-  print("Date:", date, " CALL. Orders:", call_orders, "Net Pnl:", call_pnl) 
+  # print(test2.get_orders_list())
+  # orders_lists.extend(test2.get_orders_list())
+  orders_lists += test2.get_orders_list()
+  # print(test2.get_orders_list())
+  print("Date:", date, " CALL. Orders:", call_orders, "Net Pnl:", call_pnl, len(orders_lists)) 
 
   del test2
 
@@ -432,6 +439,6 @@ output_file.write("results = " + str(results) + '\n')
 output_file.close()
 
 orders_lists_df = pd.DataFrame(orders_lists, columns = ['Date', 'Type', 'PnL', 'Buy Time', 'Sell Time', 'Real Buy Time', 'Real Sell Time'])
-orders_lists_df.to_csv("orders_lists_2.csv")
+orders_lists_df.to_csv("orders_lists_2.csv", index=False)
 
 print("results = ", results)
