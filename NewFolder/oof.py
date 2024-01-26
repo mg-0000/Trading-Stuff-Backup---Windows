@@ -213,16 +213,18 @@ class fixed_date_run_test:
       historical_data.get_option_historical_data(start_date = str(self.date) + "T09:30:00.000Z", end_date = str(self.date) + "T15:30:00.000Z", stock_code="CNXBAN", expiry=self.expiry, strike=str(int(strike)), right=action, time_interval="1second")
       if(os.path.isfile(path)==False):
         self.expiry = (datetime.strptime(self.expiry, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
-        historical_data.get_option_historical_data(start_date = str(self.date) + "T09:30:00.000Z", end_date = str(self.date) + "T15:30:00.000Z", stock_code="CNXBAN", expiry=self.expiry, strike=str(int(strike)), right=action, time_interval="1second")
         path = 'Data/CNXBAN' + '_options_' + self.expiry[:4] + '_' + self.expiry[5:7] + '_' + self.expiry[8:10] + '_' + action + str(int(strike)) + '_1second' + self.date[:4] + '_' + self.date[5:7] + '_' + self.date[8:10] + '.csv'
         if(os.path.isfile(path)==False):
-          self.expiry = (datetime.strptime(self.expiry, "%Y-%m-%d") - timedelta(days=2)).strftime("%Y-%m-%d")
           historical_data.get_option_historical_data(start_date = str(self.date) + "T09:30:00.000Z", end_date = str(self.date) + "T15:30:00.000Z", stock_code="CNXBAN", expiry=self.expiry, strike=str(int(strike)), right=action, time_interval="1second")
-          path = 'Data/CNXBAN' + '_options_' + self.expiry[:4] + '_' + self.expiry[5:7] + '_' + self.expiry[8:10] + '_' + action + str(int(strike)) + '_1second' + self.date[:4] + '_' + self.date[5:7] + '_' + self.date[8:10] + '.csv'
-          time.sleep(50)
           if(os.path.isfile(path)==False):
-            print("No data for call for expiry", self.expiry, "and date", self.date, "and strike", str(int(strike)))
-            return 0
+            self.expiry = (datetime.strptime(self.expiry, "%Y-%m-%d") - timedelta(days=2)).strftime("%Y-%m-%d")
+            path = 'Data/CNXBAN' + '_options_' + self.expiry[:4] + '_' + self.expiry[5:7] + '_' + self.expiry[8:10] + '_' + action + str(int(strike)) + '_1second' + self.date[:4] + '_' + self.date[5:7] + '_' + self.date[8:10] + '.csv'
+            if(os.path.isfile(path)==False):
+              historical_data.get_option_historical_data(start_date = str(self.date) + "T09:30:00.000Z", end_date = str(self.date) + "T15:30:00.000Z", stock_code="CNXBAN", expiry=self.expiry, strike=str(int(strike)), right=action, time_interval="1second")
+              time.sleep(50)
+              if(os.path.isfile(path)==False):
+                print("No data for call for expiry", self.expiry, "and date", self.date, "and strike", str(int(strike)))
+                return 0
     return path
   
   def get_spot(self, time):
@@ -388,6 +390,7 @@ first_expiry = "2023-11-29"
 weekday_dates = get_weekday_dates(start_date, end_date)
 expiry_dates = get_expiry_dates(weekday_dates, first_expiry)
 print(weekday_dates)
+print(expiry_dates)
 
 results = []
 orders_dict = {}
