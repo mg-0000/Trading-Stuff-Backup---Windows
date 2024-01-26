@@ -185,17 +185,17 @@ class fixed_strike_strategy_class:
 
 ## Now define the actual backtesting function which runs the strategy class object
 class fixed_date_run_test:
-  fixed_strike_strategy_objects = []
-  orders_list = []
-  pnl = 0
-  total_orders = 0
-  max_loss = -50
+  max_loss = -25
 
   def __init__(self, date, expiry, stock, action) -> None:
     self.date = date
     self.stock = stock
     self.expiry = expiry
     self.action = action
+    self.orders_list = []
+    self.fixed_strike_strategy_objects = []
+    self.pnl = 0
+    self.total_orders = 0
 
   def get_banknifty_data(self):
     path = 'Data/' + self.stock + '_5minute' + self.date[:4] + '_' + self.date[5:7] + '_' + self.date[8:10] + '.csv'
@@ -219,6 +219,7 @@ class fixed_date_run_test:
           self.expiry = (datetime.strptime(self.expiry, "%Y-%m-%d") - timedelta(days=2)).strftime("%Y-%m-%d")
           historical_data.get_option_historical_data(start_date = str(self.date) + "T09:30:00.000Z", end_date = str(self.date) + "T15:30:00.000Z", stock_code="CNXBAN", expiry=self.expiry, strike=str(int(strike)), right=action, time_interval="1second")
           path = 'Data/CNXBAN' + '_options_' + self.expiry[:4] + '_' + self.expiry[5:7] + '_' + self.expiry[8:10] + '_' + action + str(int(strike)) + '_1second' + self.date[:4] + '_' + self.date[5:7] + '_' + self.date[8:10] + '.csv'
+          time.sleep(50)
           if(os.path.isfile(path)==False):
             print("No data for call for expiry", self.expiry, "and date", self.date, "and strike", str(int(strike)))
             return 0
@@ -375,9 +376,9 @@ class fixed_date_run_test:
     return return_list
 
 
-start_date = "2023-11-09"
+start_date = "2023-11-23"
 end_date = "2024-01-24"
-first_expiry = "2023-11-15"
+first_expiry = "2023-11-29"
 
 # start_date = "2024-01-11"
 # end_date = "2024-01-11"
@@ -393,8 +394,6 @@ orders_lists = []
 for i in range(len(weekday_dates)):
   date = weekday_dates[i]
   expiry = expiry_dates[i]
-
-  output_file = open("live_output_2.txt", "w")
 
   test = fixed_date_run_test(date, expiry, "CNXBAN", "put")
   test.run_strategy()
@@ -418,17 +417,17 @@ for i in range(len(weekday_dates)):
 
   del test2
 
-  
+  output_file = open("live_output_2.txt", "w")
   output_file.write("results = " + str(results) + '\n')
   output_file.close()
 
-  orders_lists_df = pd.DataFrame(orders_lists, columns = ['Date', 'Type', 'PnL', 'Buy Time', 'Sell Time', 'Real Buy Time', 'Real Sell Time'])
-  orders_lists_df.to_csv("orders_lists_2.csv")
+  # orders_lists_df = pd.DataFrame(orders_lists, columns = ['Date', 'Type', 'PnL', 'Buy Time', 'Sell Time', 'Real Buy Time', 'Real Sell Time'])
+  # orders_lists_df.to_csv("orders_lists_2.csv")
 
-  time.sleep(50)
+  # time.sleep(50)
 
 # results = pd.DataFrame(results, columns = ['Type', 'Date', 'Orders', 'Net Pnl'])
-
+output_file = open("live_output_2.txt", "w")
 output_file.write("results = " + str(results) + '\n')
 output_file.close()
 
