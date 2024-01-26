@@ -1,7 +1,8 @@
 import pandas as pd
-a = []
-for i in range(4,16):
-    a.append([i, i+1,i+2])
+
+a = {
+    "09:35:00": 15
+}
     
 print(a)
 print(len(a))
