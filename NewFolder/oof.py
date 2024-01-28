@@ -268,9 +268,9 @@ class fixed_date_run_test:
     time_format = "%H:%M:%S"
 
     # Initial
-    curr_time = "09:35:00"
-    next_time = self.get_next_time("09:30:00")
-    end_time = "15:24:00"
+    curr_time = "12:30:00"
+    next_time = self.get_next_time("12:30:00")
+    end_time = "15:00:00"
 
     spot = self.get_spot(curr_time)
     prev_spot = spot
@@ -427,7 +427,7 @@ for i in range(len(weekday_dates)):
 
   del test2
 
-  output_file = open("live_output_2.txt", "w")
+  output_file = open("live_output_3.txt", "w")
   output_file.write("results = " + str(results) + '\n')
   output_file.close()
 
@@ -437,11 +437,11 @@ for i in range(len(weekday_dates)):
   # time.sleep(50)
 
 # results = pd.DataFrame(results, columns = ['Type', 'Date', 'Orders', 'Net Pnl'])
-output_file = open("live_output_2.txt", "w")
+output_file = open("live_output_3.txt", "w")
 output_file.write("results = " + str(results) + '\n')
 output_file.close()
 
 orders_lists_df = pd.DataFrame(orders_lists, columns = ['Date', 'Type', 'PnL', 'Buy Time', 'Sell Time', 'Real Buy Time', 'Real Sell Time'])
-orders_lists_df.to_csv("orders_lists_2.csv", index=False)
+orders_lists_df.to_csv("orders_lists_3.csv", index=False)
 
 print("results = ", results)
