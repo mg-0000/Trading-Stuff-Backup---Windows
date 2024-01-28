@@ -40,7 +40,7 @@ def get_metrics(file):
 
     global new_pnl, total_orders
 
-    if curr_price_time[1] - order[3] < 10 and flag == True and (curr_price_time[0] <= old_stoploss or curr_price_time[0] >= old_target):
+    if curr_price_time[1] - order[3] <= 10 and flag == True and (curr_price_time[0] <= old_stoploss or curr_price_time[0] >= old_target):
       flag = False
       return [order[0],old_target, old_stoploss, order[3], flag, False], pnl, order_qty
     elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 1.02*order[0] and curr_price_time[0] > 0.98*order[0]):
