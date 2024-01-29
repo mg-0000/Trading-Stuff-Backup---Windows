@@ -43,7 +43,7 @@ class fixed_strike_strategy_class:
     target_margin = 1.1
     stoploss_margin = 0.9
     c_std = 5
-    max_loss = 100
+    buy_lag = 10
     ##########################
 
     def __init__(self, strike, date, expiry, action) -> None:
@@ -77,24 +77,27 @@ class fixed_strike_strategy_class:
         old_stoploss = order[2]
         flag = order[4]
 
-        if curr_price_time[1] - order[3] <= 10 and flag == True and (curr_price_time[0] <= old_stoploss or curr_price_time[0] >= old_target):
+        if curr_price_time[1] - order[3] <= self.buy_lag and flag == True and (curr_price_time[0] <= old_stoploss or curr_price_time[0] >= old_target):
           flag = False
+          print("here1", order)
           return [order[0],old_target, old_stoploss, order[3], flag, False], pnl, order_qty
         elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 1.02*order[0] and curr_price_time[0] > 0.98*order[0]):
         # elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 0.98*order[0]):
           flag = False
           return [order[0],old_target, old_stoploss, order[3], flag, False], pnl, order_qty
-        elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] > old_stoploss and curr_price_time[0] < old_target):
+        elif curr_price_time[1] - order[3] == self.buy_lag and flag == True and (curr_price_time[0] > old_stoploss and curr_price_time[0] < old_target):
           flag = True
           order_qty += 1
           total_orders += 1
           order[0] = curr_price_time[0] 
           order[5] = True
+          print("here")
 
         if flag:
           if curr_price_time[0] > old_target and order[5]:
             # if(curr_price_time[1] - order[3]>10):
             print(f'TARGET HIT Order bought at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
+            print(order)
             pnl += curr_price_time[0] - order[0]
             self.orders_list.append([curr_price_time[0] - order[0], order[3], curr_price_time[1], order[5], curr_price_time[2]])  # [order pnl, order buy time, order sell time, real buy time, real sell time]
             flag = False
@@ -111,6 +114,8 @@ class fixed_strike_strategy_class:
               # if(curr_price_time[1] - order[3]>10):
               # print(f'STOPLOSS HIT Order at {order[0]} has been executed at {curr_price_time[0]} and premium lost: {curr_price_time[0] - order[0]}')
               # pass
+
+            print(order)
 
             if order[5]=="09:35:00":
               print("Shouldnt happen", order)
@@ -157,7 +162,7 @@ class fixed_strike_strategy_class:
         self.order_qty += 1
         self.total_orders += 1
         self.my_orders[curr_price] = [strike_price_order, target, stoploss, self.time, True, False, real_time, 0] # Values {order_price, target, SL, order_time, active_order_flag, real_buy_flag, buy_real_time, real_sell_time}
-        # print("Placing buy order",self.my_orders[curr_price])
+        print("Placing buy order",self.my_orders[curr_price])
 
       order_copy = self.my_orders.copy()
       if len(self.my_orders)>0:
@@ -393,13 +398,13 @@ class fixed_date_run_test:
     return return_list
 
 
-start_date = "2023-11-23"
-end_date = "2024-01-24"
-first_expiry = "2023-11-29"
+# start_date = "2023-11-23"
+# end_date = "2024-01-24"
+# first_expiry = "2023-11-29"
 
-# start_date = "2024-01-11"
-# end_date = "2024-01-11"
-# first_expiry = "2024-01-17"
+start_date = "2024-01-11"
+end_date = "2024-01-11"
+first_expiry = "2024-01-17"
 
 weekday_dates = get_weekday_dates(start_date, end_date)
 expiry_dates = get_expiry_dates(weekday_dates, first_expiry)
@@ -441,8 +446,10 @@ for i in range(len(weekday_dates)):
 
   del test2
 
-  output_file = open("live_output_2.txt", "w")
+  output_file = open("live_output_4.txt", "w")
   output_file.write("results = " + str(results) + '\n')
+
+
   output_file.close()
 
   # orders_lists_df = pd.DataFrame(orders_lists, columns = ['Date', 'Type', 'PnL', 'Buy Time', 'Sell Time', 'Real Buy Time', 'Real Sell Time'])
@@ -451,11 +458,11 @@ for i in range(len(weekday_dates)):
   # time.sleep(50)
 
 # results = pd.DataFrame(results, columns = ['Type', 'Date', 'Orders', 'Net Pnl'])
-output_file = open("live_output_2.txt", "w")
+output_file = open("live_output_4.txt", "w")
 output_file.write("results = " + str(results) + '\n')
 output_file.close()
 
 orders_lists_df = pd.DataFrame(orders_lists, columns = ['Date', 'Type', 'PnL', 'Buy Time', 'Sell Time', 'Real Buy Time', 'Real Sell Time'])
-orders_lists_df.to_csv("orders_lists_2.csv", index=False)
+orders_lists_df.to_csv("orders_lists_4.csv", index=False)
 
 print("results = ", results)
