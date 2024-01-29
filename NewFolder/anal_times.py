@@ -22,6 +22,8 @@ other_neg_times = {}
 other_neg_times_sell = {}
 other_pos_times_sell = {}
 sum_times = {}
+avg_pnl_wrt_hold_time = {}
+no_avg_pnl_wrt_hold_time = {}
 
 def get_half_hour_interval(time):
     time = datetime.strptime(time, '%H:%M:%S')
@@ -54,6 +56,12 @@ for idx, row_data in df.iterrows():
     # if(i<len(df) - 1000):
     #     continue
     
+    if(get_hold_time(row_data) not in avg_pnl_wrt_hold_time):
+        avg_pnl_wrt_hold_time[get_hold_time(row_data)] = 0
+        no_avg_pnl_wrt_hold_time[get_hold_time(row_data)] = 0
+    avg_pnl_wrt_hold_time[get_hold_time(row_data)] += row_data['PnL']
+    no_avg_pnl_wrt_hold_time[get_hold_time(row_data)] += 1
+
     if(row_data['PnL'] > 0):
         profitable_hold_times.append(get_hold_time(row_data))
         if(get_closest_time(row_data['Real Buy Time']) not in other_pos_times):
@@ -91,6 +99,9 @@ for key in avg_buy_pnls:
     avg_buy_pnls[key] /= no_buy_pnls[key]
 for key in avg_sell_pnls:
     avg_sell_pnls[key] /= no_sell_pnls[key]
+
+# for key in avg_pnl_wrt_hold_time:
+#     avg_pnl_wrt_hold_time[key] /= no_avg_pnl_wrt_hold_time[key]
 
 # plt.hist(pos_list_times, bins=50, alpha=0.5, color='blue', label='Profitable Trades')
 # plt.hist(neg_list_times, bins=50, alpha=0.5, color='red', label='Lossy Trades')
@@ -137,4 +148,12 @@ plt.title("Distribution of Trade Hold Times")
 plt.xlabel("Hold Times")
 plt.ylabel("Frequency")
 plt.xlim(0, 35)
+plt.show()
+
+plt.bar(list(avg_pnl_wrt_hold_time.keys()), avg_pnl_wrt_hold_time.values(), width=0.8, color='blue')
+plt.title("Average PnL by Hold Time")
+plt.xlabel("Hold Time")
+plt.ylabel("Average PnL")
+plt.xlim(0,50)
+# plt.ylim(-5,15)
 plt.show()
