@@ -41,7 +41,7 @@ def get_closest_time(time):
     elif int(time[-5:-3])>=15 and int(time[-5:-3])<45 :
       closest_time = str(int(time[:2])) + ":30:00" 
     else:
-      if int(time[:2])<10:
+      if int(time[:2])<9:
         closest_time = "0" + str(int(time[:2])+1) + ":00:00"
       else:
         closest_time = str(int(time[:2])+1) + ":00:00"
