@@ -19,9 +19,9 @@ no_buy_pnls = {}
 no_sell_pnls = {}
 other_pos_times = {}
 other_neg_times = {}
-other_neg_times_sell = {}
-other_pos_times_sell = {}
 sum_times = {}
+avg_pnl_wrt_hold_time = {}
+no_avg_pnl_wrt_hold_time = {}
 
 def get_half_hour_interval(time):
     time = datetime.strptime(time, '%H:%M:%S')
@@ -39,7 +39,7 @@ def get_closest_time(time):
     elif int(time[-5:-3])>=15 and int(time[-5:-3])<45 :
       closest_time = str(int(time[:2])) + ":30:00" 
     else:
-      if int(time[:2])<10:
+      if int(time[:2])<9:
         closest_time = "0" + str(int(time[:2])+1) + ":00:00"
       else:
         closest_time = str(int(time[:2])+1) + ":00:00"
@@ -54,17 +54,24 @@ for idx, row_data in df.iterrows():
     # if(i<len(df) - 1000):
     #     continue
     
+    if(get_hold_time(row_data) not in avg_pnl_wrt_hold_time):
+        avg_pnl_wrt_hold_time[get_hold_time(row_data)] = 0
+        no_avg_pnl_wrt_hold_time[get_hold_time(row_data)] = 0
+    avg_pnl_wrt_hold_time[get_hold_time(row_data)] += row_data['PnL']
+    no_avg_pnl_wrt_hold_time[get_hold_time(row_data)] += 1
+
     if(row_data['PnL'] > 0):
         profitable_hold_times.append(get_hold_time(row_data))
         if(get_closest_time(row_data['Real Buy Time']) not in other_pos_times):
             other_pos_times[get_closest_time(row_data['Real Buy Time'])] = 0
+        if(get_closest_time(row_data['Real Buy Time']) not in sum_times):
             sum_times[get_closest_time(row_data['Real Buy Time'])] = 0
-            other_pos_times_sell[get_closest_time(row_data['Real Sell Time'])] = 0
         other_pos_times[get_closest_time(row_data['Real Buy Time'])] += 1
     else:
         lossy_hold_times.append(get_hold_time(row_data))
         if(get_closest_time(row_data['Real Buy Time']) not in other_neg_times):
             other_neg_times[get_closest_time(row_data['Real Buy Time'])] = 0
+        if(get_closest_time(row_data['Real Buy Time']) not in sum_times):
             sum_times[get_closest_time(row_data['Real Buy Time'])] = 0
         other_neg_times[get_closest_time(row_data['Real Buy Time'])] += 1
     
@@ -92,13 +99,8 @@ for key in avg_buy_pnls:
 for key in avg_sell_pnls:
     avg_sell_pnls[key] /= no_sell_pnls[key]
 
-# plt.hist(pos_list_times, bins=50, alpha=0.5, color='blue', label='Profitable Trades')
-# plt.hist(neg_list_times, bins=50, alpha=0.5, color='red', label='Lossy Trades')
-# plt.legend(loc='upper right')
-# plt.title("Distribution of Trade Buy Times")
-# plt.xlabel("Trade Times")
-# plt.ylabel("Frequency")
-# plt.show()
+# for key in avg_pnl_wrt_hold_time:
+#     avg_pnl_wrt_hold_time[key] /= no_avg_pnl_wrt_hold_time[key]
     
 print(sum, len(df))
 # print(avg_buy_pnls)
@@ -137,4 +139,12 @@ plt.title("Distribution of Trade Hold Times")
 plt.xlabel("Hold Times")
 plt.ylabel("Frequency")
 plt.xlim(0, 35)
+plt.show()
+
+plt.bar(list(avg_pnl_wrt_hold_time.keys()), avg_pnl_wrt_hold_time.values(), width=0.8, color='blue')
+plt.title("Average PnL by Hold Time")
+plt.xlabel("Hold Time")
+plt.ylabel("Average PnL")
+plt.xlim(0,50)
+# plt.ylim(-5,15)
 plt.show()
