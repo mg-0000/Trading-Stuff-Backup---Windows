@@ -43,7 +43,7 @@ class fixed_strike_strategy_class:
     target_margin = 1.1
     stoploss_margin = 0.9
     c_std = 4
-    buy_lag = 4
+    buy_lag = 10
     force_sell_lag = 14
     ##########################
 
@@ -82,11 +82,11 @@ class fixed_strike_strategy_class:
           flag = False
           # print("Stoploss hit before buy_lag",order, curr_price_time[1])
           return [order[0],old_target, old_stoploss, order[3], flag, False, order[6], order[7]], pnl, order_qty
-        # elif curr_price_time[1] - order[3] == self.buy_lag and order[5]==False and flag == True and (curr_price_time[0] < 1.02*order[0] and curr_price_time[0] > 0.98*order[0]):
-        # # elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 0.98*order[0]):
-        #   flag = False
-        #   print("Conditon not satisfied", order, curr_price_time[2])
-        #   return [order[0],old_target, old_stoploss, order[3], flag, False, order[6], order[7]], pnl, order_qty
+        elif curr_price_time[1] - order[3] == self.buy_lag and order[5]==False and flag == True and (curr_price_time[0] < (order[0] - order[2])/2 and curr_price_time[0] > (order[1] - order[0])/2):
+        # elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 0.98*order[0]):
+          flag = False
+          print("Conditon not satisfied", order, curr_price_time[2])
+          return [order[0],old_target, old_stoploss, order[3], flag, False, order[6], order[7]], pnl, order_qty
         elif curr_price_time[1] - order[3] == self.buy_lag and flag == True and order[5]==False and (curr_price_time[0] > old_stoploss and curr_price_time[0] < old_target):
           flag = True
           order_qty += 1
@@ -207,7 +207,7 @@ class fixed_strike_strategy_class:
 
 ## Now define the actual backtesting function which runs the strategy class object
 class fixed_date_run_test:
-  max_loss = -2.5
+  max_loss = -3
 
   def __init__(self, date, expiry, stock, action) -> None:
     self.date = date
@@ -449,7 +449,7 @@ for i in range(len(weekday_dates)):
 
   del test2
 
-  output_file = open("live_output_4.txt", "w")
+  output_file = open("live_output_5.txt", "w")
   output_file.write("results = " + str(results) + '\n')
   output_file.close()
 
@@ -459,11 +459,11 @@ for i in range(len(weekday_dates)):
   # time.sleep(50)
 
 # results = pd.DataFrame(results, columns = ['Type', 'Date', 'Orders', 'Net Pnl'])
-output_file = open("live_output_4.txt", "w")
+output_file = open("live_output_5.txt", "w")
 output_file.write("results = " + str(results) + '\n')
 output_file.close()
 
 orders_lists_df = pd.DataFrame(orders_lists, columns = ['Date', 'Type', 'PnL', 'Buy Time', 'Sell Time', 'Real Buy Time', 'Real Sell Time'])
-orders_lists_df.to_csv("orders_lists_4.csv", index=False)
+orders_lists_df.to_csv("orders_lists_5.csv", index=False)
 
 print("results = ", results)
