@@ -2,7 +2,7 @@ from breeze_connect import BreezeConnect
 ### Mridul's credentials
 api_key="650G7Z51z645540%&15~b93v5*4M!574"
 api_secret="409755400@8P#xT7009=x6~O58977333"
-session_token="33013797"
+session_token="33128207"
 breeze = BreezeConnect(api_key=api_key)
 breeze.generate_session(api_secret=api_secret, session_token=str(session_token))
 # print(breeze.get_customer_details(api_session=session_token))

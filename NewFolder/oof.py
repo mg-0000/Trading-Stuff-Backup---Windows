@@ -42,8 +42,9 @@ class fixed_strike_strategy_class:
     max_order_qty = 1
     target_margin = 1.1
     stoploss_margin = 0.9
-    c_std = 5
-    buy_lag = 10
+    c_std = 4
+    buy_lag = 4
+    force_sell_lag = 15
     ##########################
 
     def __init__(self, strike, date, expiry, action) -> None:
@@ -77,54 +78,56 @@ class fixed_strike_strategy_class:
         old_stoploss = order[2]
         flag = order[4]
 
-        if curr_price_time[1] - order[3] <= self.buy_lag and flag == True and (curr_price_time[0] <= old_stoploss or curr_price_time[0] >= old_target):
+        if curr_price_time[1] - order[3] <= self.buy_lag and flag == True and order[5]==False and (curr_price_time[0] <= old_stoploss or curr_price_time[0] >= old_target):
           flag = False
-          print("here1", order)
-          return [order[0],old_target, old_stoploss, order[3], flag, False], pnl, order_qty
-        elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 1.02*order[0] and curr_price_time[0] > 0.98*order[0]):
-        # elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 0.98*order[0]):
-          flag = False
-          return [order[0],old_target, old_stoploss, order[3], flag, False], pnl, order_qty
-        elif curr_price_time[1] - order[3] == self.buy_lag and flag == True and (curr_price_time[0] > old_stoploss and curr_price_time[0] < old_target):
+          # print("Stoploss hit before buy_lag",order, curr_price_time[1])
+          return [order[0],old_target, old_stoploss, order[3], flag, False, order[6], order[7]], pnl, order_qty
+        # elif curr_price_time[1] - order[3] == self.buy_lag and order[5]==False and flag == True and (curr_price_time[0] < 1.02*order[0] and curr_price_time[0] > 0.98*order[0]):
+        # # elif curr_price_time[1] - order[3] == 10 and flag == True and (curr_price_time[0] < 0.98*order[0]):
+        #   flag = False
+        #   print("Conditon not satisfied", order, curr_price_time[2])
+        #   return [order[0],old_target, old_stoploss, order[3], flag, False, order[6], order[7]], pnl, order_qty
+        elif curr_price_time[1] - order[3] == self.buy_lag and flag == True and order[5]==False and (curr_price_time[0] > old_stoploss and curr_price_time[0] < old_target):
           flag = True
           order_qty += 1
-          total_orders += 1
+          self.total_orders += 1
           order[0] = curr_price_time[0] 
+          order[4] = True
           order[5] = True
-          print("here")
+          order[6] = curr_price_time[2]
+          order[3] = curr_price_time[1]
+          # print("Buying,", order)
+          return [order[0], order[1], order[2], order[3], order[4], order[5], order[6], order[7]], pnl, order_qty
 
         if flag:
-          if curr_price_time[0] > old_target and order[5]:
+          if curr_price_time[1] - order[3] > self.force_sell_lag and order[5]==True:
+            # Force sell off
+            print("Force selling", order,  curr_price_time[2], curr_price_time[0] - order[0])
+            pnl += curr_price_time[0] - order[0]
+            self.orders_list.append([curr_price_time[0] - order[0], order[3], curr_price_time[1], order[6], curr_price_time[2]])
+            flag = False
+            order_qty -= 1
+            return [order[0],old_target, old_stoploss, order[3], flag, False, order[6], curr_price_time[2]], pnl, order_qty
+
+          if curr_price_time[0] > old_target and order[5]==True:
             # if(curr_price_time[1] - order[3]>10):
-            print(f'TARGET HIT Order bought at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
-            print(order)
+            print(f'TARGET HIT Order bought at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}', order)
             pnl += curr_price_time[0] - order[0]
-            self.orders_list.append([curr_price_time[0] - order[0], order[3], curr_price_time[1], order[5], curr_price_time[2]])  # [order pnl, order buy time, order sell time, real buy time, real sell time]
+            self.orders_list.append([curr_price_time[0] - order[0], order[3], curr_price_time[1], order[6], curr_price_time[2]])  # [order pnl, order buy time, order sell time, real buy time, real sell time]
             flag = False
             order_qty -= 1
-            return [order[0],old_target, old_stoploss, order[3], flag, order[5], curr_price_time[2]], pnl, order_qty
+            return [order[0],old_target, old_stoploss, order[3], flag, False, order[6], curr_price_time[2]], pnl, order_qty
 
 
-          if curr_price_time[0] < old_stoploss and order[5]:
-            # if old_stoploss - order[0] > 0:
-              # if(curr_price_time[1] - order[3]>10):
-              # print(f'STOPLOSS HIT Order at {order[0]} has been executed at {curr_price_time[0]} and premium gained: {curr_price_time[0] - order[0]}')
-              # pass
-            # else:
-              # if(curr_price_time[1] - order[3]>10):
-              # print(f'STOPLOSS HIT Order at {order[0]} has been executed at {curr_price_time[0]} and premium lost: {curr_price_time[0] - order[0]}')
-              # pass
-
-            print(order)
-
-            if order[5]=="09:35:00":
-              print("Shouldnt happen", order)
+          if curr_price_time[0] < old_stoploss and order[5]==True:
+            
+            # print("Selling order normally", order, curr_price_time[2], curr_price_time[0] - order[0])
 
             pnl += curr_price_time[0] - order[0]
-            self.orders_list.append([curr_price_time[0] - order[0], order[3], curr_price_time[1], order[5], curr_price_time[2]])
+            self.orders_list.append([curr_price_time[0] - order[0], order[3], curr_price_time[1], order[6], curr_price_time[2]])
             flag = False
             order_qty -= 1
-            return [order[0],old_target, old_stoploss, order[3], flag, order[5], curr_price_time[2]], pnl, order_qty
+            return [order[0],old_target, old_stoploss, order[3], flag, False, order[6], curr_price_time[2]], pnl, order_qty
 
           decay_factor = (5/100)*math.exp(-(curr_price_time[1] - order[3])/20) # Linearly vary between 0.1% to 1% between 1 sec to 30 sec (in %)
 
@@ -144,7 +147,7 @@ class fixed_strike_strategy_class:
             new_target = old_target
             new_stoploss = old_stoploss
 
-          return [order[0],new_target, new_stoploss, order[3], flag, order[5], order[6]], pnl, order_qty
+          return [order[0],new_target, new_stoploss, order[3], flag, order[5], order[6], order[7]], pnl, order_qty
     
     def on_ticks(self, ticks):
       curr_price = float(ticks['close'])
@@ -162,7 +165,7 @@ class fixed_strike_strategy_class:
         self.order_qty += 1
         self.total_orders += 1
         self.my_orders[curr_price] = [strike_price_order, target, stoploss, self.time, True, False, real_time, 0] # Values {order_price, target, SL, order_time, active_order_flag, real_buy_flag, buy_real_time, real_sell_time}
-        print("Placing buy order",self.my_orders[curr_price])
+        # print("Placing buy order",self.my_orders[curr_price])
 
       order_copy = self.my_orders.copy()
       if len(self.my_orders)>0:
@@ -176,9 +179,9 @@ class fixed_strike_strategy_class:
 
     def square_off_all(self, curr_price, time, real_time):
       for i in self.my_orders.keys():
-        if self.my_orders[i][4]:
-          self.my_orders[i][4] = False
-          self.orders_list.append([self.my_orders[i][0] - curr_price, self.my_orders[i][3], time, self.my_orders[i][5], real_time])
+        if self.my_orders[i][5]:
+          self.my_orders[i][5] = False
+          self.orders_list.append([self.my_orders[i][0] - curr_price, self.my_orders[i][3], time, self.my_orders[i][6], real_time])
           self.net_pnl += self.my_orders[i][0] - curr_price
           self.order_qty -= 1   # Selling
           print("Squaring off at time", real_time, 'for profit', self.my_orders[i][0] - curr_price)
@@ -196,7 +199,7 @@ class fixed_strike_strategy_class:
     def get_open_orders(self):
       return_list = []
       for order_key in self.my_orders.keys():
-        if self.my_orders[order_key][4]==True:
+        if self.my_orders[order_key][5]==True:
           return_list.append(self.my_orders[order_key])
       return return_list
     
@@ -398,13 +401,13 @@ class fixed_date_run_test:
     return return_list
 
 
-# start_date = "2023-11-23"
-# end_date = "2024-01-24"
-# first_expiry = "2023-11-29"
+start_date = "2023-11-23"
+end_date = "2024-01-24"
+first_expiry = "2023-11-29"
 
-start_date = "2024-01-11"
-end_date = "2024-01-11"
-first_expiry = "2024-01-17"
+# start_date = "2024-01-15"
+# end_date = "2024-01-15"
+# first_expiry = "2024-01-17"
 
 weekday_dates = get_weekday_dates(start_date, end_date)
 expiry_dates = get_expiry_dates(weekday_dates, first_expiry)
@@ -448,8 +451,6 @@ for i in range(len(weekday_dates)):
 
   output_file = open("live_output_4.txt", "w")
   output_file.write("results = " + str(results) + '\n')
-
-
   output_file.close()
 
   # orders_lists_df = pd.DataFrame(orders_lists, columns = ['Date', 'Type', 'PnL', 'Buy Time', 'Sell Time', 'Real Buy Time', 'Real Sell Time'])

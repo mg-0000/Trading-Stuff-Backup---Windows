@@ -85,6 +85,10 @@ def get_weekday_dates(start_date, end_date, interval = 1):
             if(current_date==datetime.strptime("2023-12-25", "%Y-%m-%d")):
                 current_date += timedelta(days=1)
                 continue
+            # Holiday on 22nd January
+            if(current_date==datetime.strptime("2024-01-22", "%Y-%m-%d")):
+                current_date += timedelta(days=1)
+                continue
             # Not available on 3rd January
             if(current_date==datetime.strptime("2024-01-03", "%Y-%m-%d")):
                 current_date += timedelta(days=1)
@@ -132,9 +136,9 @@ def get_expiry_dates(dates, first_expiry):
 
         # to correct the expiry holiday on 29th November
         if(first_expiry==datetime.strptime("2023-11-29", "%Y-%m-%d")):
-            first_expiry -= timedelta(days=1)
-        if(first_expiry==datetime.strptime("2023-12-07", "%Y-%m-%d")):
             first_expiry += timedelta(days=1)
+        if(first_expiry==datetime.strptime("2023-12-07", "%Y-%m-%d")):
+            first_expiry -= timedelta(days=1)
 
         # to account for the change in first_expiry, if any
         if(len(expiries)>0):
